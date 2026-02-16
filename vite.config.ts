@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => {
     return {
       // ÇOK ÖNEMLİ: GitHub repo adınızı buraya yazın (Örn: '/tarih-asistanim/')
       // Eğer repo adınız 'TarihAsistanim' ise '/TarihAsistanim/' yapın.
-      base: '/repo-adinizi-buraya-yazın/', 
+      base: '/tarihasistan-m---auzef/',
 
       server: {
         port: 3000,
