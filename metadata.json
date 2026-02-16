@@ -1,0 +1,7 @@
+{
+  "name": "TarihAsistanım - AUZEF",
+  "description": "AUZEF Tarih Bölümü 3. Sınıf öğrencileri için özel olarak tasarlanmış, yapay zeka destekli ders çalışma ve sınav hazırlık uygulaması.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
