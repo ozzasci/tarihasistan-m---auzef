@@ -8,25 +8,11 @@ interface SettingsViewProps {
   onToggleTheme: () => void;
 }
 
-// Fixed: Removed local declaration of Window.aistudio to avoid conflict with existing AIStudio type definition in the environment.
-
 const SettingsView: React.FC<SettingsViewProps> = ({ onBack, theme, onToggleTheme }) => {
   const [notifExam, setNotifExam] = useState(true);
-  const [notifStudy, setNotifStudy] = useState(false);
   const [storageSize, setStorageSize] = useState('0 MB');
-  const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const checkKey = async () => {
-      // Fixed: Access aistudio via type assertion to window to avoid TypeScript property conflict or missing property errors.
-      const aistudio = (window as any).aistudio;
-      if (aistudio) {
-        const hasKey = await aistudio.hasSelectedApiKey();
-        setHasApiKey(hasKey);
-      }
-    };
-    checkKey();
-
     const calcStorage = async () => {
       const pdfs = await getAllPDFs();
       let total = 0;
@@ -35,16 +21,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack, theme, onToggleThem
     };
     calcStorage();
   }, []);
-
-  const handleSelectKey = async () => {
-    // Fixed: Use type assertion to access aistudio on window.
-    const aistudio = (window as any).aistudio;
-    if (aistudio) {
-      await aistudio.openSelectKey();
-      // Yarış durumunu önlemek için seçimin başarılı olduğunu varsayıyoruz
-      setHasApiKey(true);
-    }
-  };
 
   const handleClearData = () => {
     if (window.confirm("Tüm ders ilerlemeleriniz ve notlarınız silinecektir. Bu işlem geri alınamaz. Emin misiniz?")) {
@@ -64,43 +40,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack, theme, onToggleThem
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-6">
-          {/* Yapay Zeka Config Section */}
-          <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-slate-800">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-              <span>🤖</span> Yapay Zeka Yapılandırması
-            </h3>
-            
-            <div className="space-y-4">
-              <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">API Durumu</span>
-                  <span className={`text-[10px] font-black px-2 py-1 rounded-full ${hasApiKey ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
-                    {hasApiKey ? 'AKTİF' : 'ANAHTAR BEKLENİYOR'}
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-400 leading-relaxed mb-4">
-                  Yapay zeka özelliklerini (Soru-Cevap, Analiz, Karakter Mülakatı) kullanmak için kendi API anahtarınızı bağlayabilirsiniz.
-                </p>
-                <button 
-                  onClick={handleSelectKey}
-                  className="w-full bg-indigo-600 text-white py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg hover:bg-indigo-700 transition-all active:scale-95"
-                >
-                  {hasApiKey ? 'Anahtarı Değiştir / Güncelle' : 'Kendi API Anahtarını Bağla'}
-                </button>
-                <div className="mt-4 text-center">
-                  <a 
-                    href="https://ai.google.dev/gemini-api/docs/billing" 
-                    target="_blank" 
-                    rel="noreferrer"
-                    className="text-[10px] text-indigo-500 hover:underline font-bold"
-                  >
-                    API Faturalandırma ve Ücretlendirme Hakkında Bilgi Al ↗
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* App Config Section */}
           <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-slate-800">
             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
