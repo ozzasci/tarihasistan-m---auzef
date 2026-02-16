@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Course, QuizQuestion } from '../types';
 import { generateQuiz } from '../services/geminiService';
+import { saveProgress } from '../services/dbService';
 
 interface QuizViewProps {
   course: Course;
@@ -40,13 +41,15 @@ const QuizView: React.FC<QuizViewProps> = ({ course }) => {
     }
   };
 
-  const nextQuestion = () => {
+  const nextQuestion = async () => {
     if (currentIndex < questions.length - 1) {
       setCurrentIndex(prev => prev + 1);
       setSelectedAnswer(null);
       setShowExplanation(false);
     } else {
       setQuizFinished(true);
+      // Sınav bittiğinde ilerlemeyi %100 yap
+      await saveProgress(course.id, 100);
     }
   };
 
@@ -54,19 +57,19 @@ const QuizView: React.FC<QuizViewProps> = ({ course }) => {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <div className="w-16 h-16 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="mt-4 text-slate-500 font-medium">Deneme sınavı hazırlanıyor...</p>
+        <p className="mt-4 text-slate-500 font-medium italic">Deneme sınavı hazırlanıyor...</p>
       </div>
     );
   }
 
   if (quizFinished) {
     return (
-      <div className="bg-white p-10 rounded-2xl shadow-sm border border-slate-100 text-center animate-in zoom-in-95 duration-300">
-        <div className="text-6xl mb-6">🎓</div>
-        <h2 className="text-2xl font-bold text-slate-900">Sınav Tamamlandı!</h2>
+      <div className="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100 text-center animate-in zoom-in-95 duration-300 max-w-md mx-auto">
+        <div className="text-7xl mb-6">🏆</div>
+        <h2 className="text-2xl font-serif font-bold text-slate-900">Harika İş!</h2>
         <p className="text-slate-500 mt-2 mb-8">"{course.name}" dersi başarınız:</p>
-        <div className="text-5xl font-bold text-emerald-600 mb-8">
-          {score} / {questions.length}
+        <div className="inline-flex items-center justify-center w-32 h-32 rounded-full bg-emerald-50 text-emerald-600 text-4xl font-black mb-8 border-4 border-emerald-100 shadow-inner">
+          {score}/{questions.length}
         </div>
         <button
           onClick={() => {
@@ -76,9 +79,9 @@ const QuizView: React.FC<QuizViewProps> = ({ course }) => {
             setSelectedAnswer(null);
             setShowExplanation(false);
           }}
-          className="bg-emerald-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-emerald-200 active:scale-95 transition-transform"
+          className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-transform"
         >
-          Tekrar Dene
+          Tekrar Çöz
         </button>
       </div>
     );
@@ -88,13 +91,13 @@ const QuizView: React.FC<QuizViewProps> = ({ course }) => {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-in slide-in-from-right-4 duration-300">
-      <div className="flex justify-between items-center px-2">
-        <span className="text-sm font-bold text-slate-400">Soru {currentIndex + 1} / {questions.length}</span>
-        <span className="text-sm font-bold text-emerald-600">Puan: {score}</span>
+      <div className="flex justify-between items-center px-4">
+        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Soru {currentIndex + 1} / {questions.length}</span>
+        <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-black">PUAN: {score * 20}</span>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-        <h3 className="text-lg font-medium text-slate-900 leading-relaxed">
+      <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 min-h-[140px] flex items-center">
+        <h3 className="text-xl font-serif text-slate-900 leading-relaxed text-center w-full">
           {currentQ.question}
         </h3>
       </div>
@@ -122,24 +125,27 @@ const QuizView: React.FC<QuizViewProps> = ({ course }) => {
               key={idx}
               disabled={showExplanation}
               onClick={() => handleAnswer(idx)}
-              className={`w-full p-4 rounded-xl border text-left transition-all flex items-center gap-3 ${bgColor} ${borderColor} ${textColor} ${!showExplanation ? 'hover:border-blue-400 hover:bg-blue-50 active:scale-[0.98]' : ''}`}
+              className={`w-full p-5 rounded-2xl border-2 text-left transition-all flex items-center gap-4 ${bgColor} ${borderColor} ${textColor} ${!showExplanation ? 'hover:border-blue-500 hover:shadow-md active:scale-[0.98]' : ''}`}
             >
-              <span className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0 font-bold text-slate-500">
+              <span className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold text-xs ${showExplanation && idx === currentQ.correctAnswer ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
                 {String.fromCharCode(65 + idx)}
               </span>
-              <span className="font-medium">{opt}</span>
+              <span className="font-medium text-sm">{opt}</span>
             </button>
           );
         })}
       </div>
 
       {showExplanation && (
-        <div className="bg-blue-50 p-5 rounded-2xl border border-blue-100 animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="font-bold text-blue-800 mb-1">Açıklama:</div>
-          <p className="text-blue-700 text-sm leading-relaxed">{currentQ.explanation}</p>
+        <div className="bg-blue-900 p-8 rounded-[2rem] text-white animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xl">💡</span>
+            <span className="font-bold text-sm text-blue-300">Cevap Analizi</span>
+          </div>
+          <p className="text-sm leading-relaxed text-blue-100">{currentQ.explanation}</p>
           <button
             onClick={nextQuestion}
-            className="w-full mt-4 bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition-transform"
+            className="w-full mt-6 bg-white text-blue-900 py-4 rounded-xl font-bold shadow-xl active:scale-95 transition-transform"
           >
             {currentIndex === questions.length - 1 ? "Sınavı Bitir" : "Sıradaki Soru →"}
           </button>

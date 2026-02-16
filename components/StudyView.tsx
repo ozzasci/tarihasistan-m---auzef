@@ -1,7 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Course, StudySummary } from '../types';
 import { generateSummary, generateSpeech, getHistoricalLocations } from '../services/geminiService';
+import { saveNote, getNote, saveProgress, getProgress } from '../services/dbService';
 
 interface StudyViewProps {
   course: Course;
@@ -12,16 +13,31 @@ const StudyView: React.FC<StudyViewProps> = ({ course }) => {
   const [mapData, setMapData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [audioSource, setAudioSource] = useState<AudioBufferSourceNode | null>(null);
-  const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+  const [userNote, setUserNote] = useState("");
+  const [isSavingNote, setIsSavingNote] = useState(false);
+  
+  const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const data = await generateSummary(course.name);
-        setSummary(data);
-        const locations = await getHistoricalLocations(course.name, data.content.substring(0, 300));
+        const [sumData, noteData, existingProg] = await Promise.all([
+          generateSummary(course.name),
+          getNote(course.id),
+          getProgress(course.id)
+        ]);
+        
+        setSummary(sumData);
+        setUserNote(noteData);
+        
+        // Konu açıldığında ilerlemeyi otomatik %20 yap (eğer daha düşükse)
+        if (existingProg < 20) {
+          await saveProgress(course.id, 20);
+        }
+
+        const locations = await getHistoricalLocations(course.name, sumData.content.substring(0, 300));
         setMapData(locations);
       } catch (error) {
         console.error("Yükleme hatası:", error);
@@ -30,12 +46,21 @@ const StudyView: React.FC<StudyViewProps> = ({ course }) => {
       }
     };
     fetchData();
-    return () => { if (audioSource) audioSource.stop(); };
+    return () => { if (audioSourceRef.current) audioSourceRef.current.stop(); };
   }, [course]);
+
+  const handleNoteSave = async () => {
+    setIsSavingNote(true);
+    await saveNote(course.id, userNote);
+    // Not alındığında ilerlemeyi %50'ye çıkar
+    const currentProg = await getProgress(course.id);
+    if (currentProg < 50) await saveProgress(course.id, 50);
+    setTimeout(() => setIsSavingNote(false), 800);
+  };
 
   const handleListen = async () => {
     if (isPlaying) {
-      if (audioSource) audioSource.stop();
+      if (audioSourceRef.current) audioSourceRef.current.stop();
       setIsPlaying(false);
       return;
     }
@@ -45,8 +70,8 @@ const StudyView: React.FC<StudyViewProps> = ({ course }) => {
     setIsPlaying(true);
     try {
       const audioData = await generateSpeech(summary.content.substring(0, 1500));
-      const ctx = audioContext || new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-      if (!audioContext) setAudioContext(ctx);
+      const ctx = audioContextRef.current || new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+      if (!audioContextRef.current) audioContextRef.current = ctx;
       
       const dataInt16 = new Int16Array(audioData);
       const buffer = ctx.createBuffer(1, dataInt16.length, 24000);
@@ -60,7 +85,7 @@ const StudyView: React.FC<StudyViewProps> = ({ course }) => {
       source.connect(ctx.destination);
       source.onended = () => setIsPlaying(false);
       source.start();
-      setAudioSource(source);
+      audioSourceRef.current = source;
     } catch (error) {
       console.error("Ses hatası:", error);
       setIsPlaying(false);
@@ -100,7 +125,6 @@ const StudyView: React.FC<StudyViewProps> = ({ course }) => {
           {summary?.content}
         </div>
 
-        {/* Maps Grounding Section */}
         {mapData?.chunks && mapData.chunks.length > 0 && (
           <div className="mt-10 pt-8 border-t border-slate-100">
             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mb-4">İlgili Coğrafi Konumlar</h4>
@@ -121,6 +145,28 @@ const StudyView: React.FC<StudyViewProps> = ({ course }) => {
             </div>
           </div>
         )}
+      </div>
+
+      {/* User Notes Area */}
+      <div className="bg-slate-900 p-8 rounded-[2.5rem] shadow-2xl text-white">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-serif flex items-center gap-3">
+            <span className="text-2xl">✍️</span> Ders Notlarım
+          </h3>
+          <button 
+            onClick={handleNoteSave}
+            disabled={isSavingNote}
+            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${isSavingNote ? 'bg-emerald-500' : 'bg-blue-600 hover:bg-blue-500'}`}
+          >
+            {isSavingNote ? "Kaydedildi! ✓" : "Notu Kaydet"}
+          </button>
+        </div>
+        <textarea 
+          value={userNote}
+          onChange={(e) => setUserNote(e.target.value)}
+          placeholder="Dersle ilgili önemli gördüğün kısımları buraya not alabilirsin..."
+          className="w-full h-40 bg-slate-800 border-none rounded-2xl p-6 text-slate-200 placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 outline-none resize-none text-sm leading-relaxed"
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
