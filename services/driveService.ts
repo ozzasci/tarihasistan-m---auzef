@@ -1,10 +1,8 @@
 
 /**
- * Oğuz, Google Cloud Console'dan aldığın Client ID'yi aşağıdaki tırnakların içine yazarsan
- * uygulama herkes için otomatik olarak çalışır.
- * Boş bırakırsan kullanıcıların kendi ID'lerini girmeleri gerekir.
+ * Oğuz'un sağladığı Client ID sisteme entegre edildi.
  */
-let MASTER_CLIENT_ID = ""; 
+let MASTER_CLIENT_ID = "809678519144-a3d4og3opsict9836fpgff9herq3jbf1.apps.googleusercontent.com"; 
 
 export const getStoredClientId = () => {
   return localStorage.getItem('google_client_id') || MASTER_CLIENT_ID;
@@ -26,7 +24,6 @@ export interface DriveFile {
 }
 
 let tokenClient: any = null;
-let gapiInited = false;
 
 export const isDriveConfigured = () => getStoredClientId().trim().length > 0;
 
@@ -44,7 +41,6 @@ export const initDriveApi = (): Promise<void> => {
         await gapi.client.init({
           discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
         });
-        gapiInited = true;
         
         const clientId = getStoredClientId();
         if (clientId) {
@@ -62,14 +58,17 @@ export const initDriveApi = (): Promise<void> => {
   });
 };
 
-export const searchAuzefFiles = async (): Promise<DriveFile[]> => {
+/**
+ * Drive'da özel arama yapar.
+ * @param searchTerm Kullanıcının aramak istediği kelime (varsayılan: auzef)
+ */
+export const searchAuzefFiles = async (searchTerm: string = 'auzef'): Promise<DriveFile[]> => {
   const clientId = getStoredClientId();
   if (!clientId) throw new Error("CONFIG_MISSING");
 
   const gapi = (window as any).gapi;
   const google = (window as any).google;
 
-  // Re-init tokenClient if ID changed or not set
   if (!tokenClient || tokenClient.client_id !== clientId) {
     tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: clientId,
@@ -84,7 +83,6 @@ export const searchAuzefFiles = async (): Promise<DriveFile[]> => {
       await new Promise((resolve, reject) => {
         tokenClient.callback = (resp: any) => {
           if (resp.error !== undefined) {
-            // Eğer Google "invalid_client" dönerse bunu yakala
             if (resp.error === 'invalid_client') reject(new Error("INVALID_CLIENT"));
             reject(resp);
           }
@@ -99,11 +97,17 @@ export const searchAuzefFiles = async (): Promise<DriveFile[]> => {
   }
 
   try {
+    // Arama terimini küçük harfe çevirip query oluşturuyoruz
+    const query = `name contains '${searchTerm}' and mimeType = 'application/pdf' and trashed = false`;
+    
     const response = await gapi.client.drive.files.list({
-      pageSize: 30,
+      pageSize: 50,
       fields: 'files(id, name, mimeType, size, modifiedTime, thumbnailLink)',
-      q: "name contains 'auzef' and mimeType = 'application/pdf' and trashed = false",
-      orderBy: 'modifiedTime desc'
+      q: query,
+      orderBy: 'modifiedTime desc',
+      // Paylaşılan dosyaları da içermesi için:
+      includeItemsFromAllDrives: true,
+      supportsAllDrives: true
     });
 
     return response.result.files || [];
