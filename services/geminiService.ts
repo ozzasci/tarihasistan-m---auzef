@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type, Modality } from "@google/genai";
-import { StudySummary, QuizQuestion, Flashcard, RulerNode, ComparisonResult, WeeklyPlan, DayAvailability } from "../types";
+import { StudySummary, QuizQuestion, Flashcard, RulerNode, ComparisonResult, WeeklyPlan, DayAvailability, NewsAnnouncement } from "../types";
 
 const ACADEMIC_SYSTEM_INSTRUCTION = "Sen uzman bir AUZEF Tarih akademisyenisin. Öğrenci Oğuz'a 3. sınıf bahar dönemi derslerinde asistanlık yapıyorsun. Cevaplarını verirken sadece genel bilgi verme; ders notlarındaki akademik terminolojiyi kullan ve sınavda çıkabilecek kritik tarihlere vurgu yap. Daima öğrencinin elindeki AUZEF ders kitabına sadık kalarak, akademik ciddiyetle cevap ver.";
 
@@ -20,29 +20,39 @@ const handleAIError = (error: any) => {
   throw error;
 };
 
-export const fetchAuzefNews = async (): Promise<string[]> => {
+export const fetchAuzefNews = async (): Promise<NewsAnnouncement[]> => {
   const ai = getAI();
   if (!ai) return [];
   try {
     const response = await ai.models.generateContent({
       model: DEFAULT_MODEL,
-      contents: "İstanbul Üniversitesi AUZEF 2025-2026 Eğitim-Öğretim yılı akademik takvimini (Kayıt yenileme, Güz ve Bahar sınavları) araştır ve en güncel tarihleri kısa başlıklar halinde ver.",
+      contents: "İstanbul Üniversitesi AUZEF (auzef.istanbul.edu.tr) resmi duyurular sayfasındaki en güncel ve önemli 5 haberi bul. Her haberin başlığını ve doğrudan resmi URL bağlantısını ver. Sınav tarihleri yerine güncel duyurulara odaklan.",
       config: {
-        systemInstruction: "Sen bir akademik asistansın. Sadece resmi auzef.istanbul.edu.tr verilerini kullan. 2025 ve 2026 yıllarına ait en güncel sınav ve kayıt tarihlerini kesin olarak ver. Her haberin başına ilgili bir emoji ekle.",
+        systemInstruction: "Sen bir vakanüvis asistanısın. Sadece auzef.istanbul.edu.tr üzerindeki resmi ve güncel haberleri bul. Yanıtı mutlaka JSON formatında, text ve url alanlarını içeren bir dizi olarak ver.",
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              text: { type: Type.STRING, description: "Haberin kısa ve öz başlığı." },
+              url: { type: Type.STRING, description: "Haberin resmi auzef.istanbul.edu.tr bağlantısı." }
+            },
+            required: ["text", "url"]
+          }
+        },
         tools: [{ googleSearch: {} }]
       }
     });
-    const news = response.text?.split('\n').filter(line => line.trim().length > 10).map(line => line.replace(/^\d+\.\s*/, '').trim()) || [];
-    return news.length > 0 ? news : [
-      "📢 2025-2026 GÜZ DÖNEMİ KAYIT YENİLEME: EYLÜL 2025",
-      "📜 GÜZ DÖNEMİ ARA SINAVLARI (VİZE): KASIM 2025",
-      "🎓 GÜZ DÖNEMİ FİNAL SINAVLARI: OCAK 2026",
-      "🏛️ BAHAR DÖNEMİ VİZE SINAVLARI: NİSAN 2026"
+    
+    const data = JSON.parse(response.text || "[]");
+    return data.length > 0 ? data : [
+      { text: "📢 AUZEF GÜNCEL DUYURULAR SAYFASI", url: "https://auzef.istanbul.edu.tr/tr/duyurular" },
+      { text: "🎓 2025-2026 AKADEMİK TAKVİM VE KAYITLAR", url: "https://auzef.istanbul.edu.tr/tr/content/egitim/akademik-takvim" }
     ];
   } catch (err) {
     return [
-      "⚠️ CANLI TAKVİM ALINAMADI: LÜTFEN 2025-2026 RESMİ SİTESİNİ KONTROL EDİNİZ.",
-      "🎓 TAHMİNİ FİNAL: HAZİRAN 2026"
+      { text: "⚠️ HABERLER ALINAMADI: RESMİ SİTEYİ KONTROL EDİNİZ", url: "https://auzef.istanbul.edu.tr" }
     ];
   }
 };

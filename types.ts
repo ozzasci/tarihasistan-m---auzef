@@ -8,6 +8,11 @@ export enum CourseId {
   ALTINORDA = 'altinorda-tarihi'
 }
 
+export interface NewsAnnouncement {
+  text: string;
+  url: string;
+}
+
 export interface Unit {
   number: number;
   title: string;
@@ -102,7 +107,7 @@ export interface StudySummary {
   content: string;
   keyDates: { date: string; event: string }[];
   importantFigures: { name: string; role: string }[];
-  motto?: string; // Yeni: Üniteye özel özlü söz
+  motto?: string; 
 }
 
 export interface ComparisonResult {
