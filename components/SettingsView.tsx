@@ -12,6 +12,7 @@ interface SettingsViewProps {
 const SettingsView: React.FC<SettingsViewProps> = ({ onBack, theme, onToggleTheme }) => {
   const [notifExam, setNotifExam] = useState(true);
   const [storageSize, setStorageSize] = useState('0 MB');
+  const [showDevNotes, setShowDevNotes] = useState(false);
 
   useEffect(() => {
     calcStorage();
@@ -44,12 +45,12 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack, theme, onToggleThem
   };
 
   return (
-    <div className="max-w-4xl mx-auto py-10 px-4 animate-in fade-in slide-in-from-bottom-6 duration-500 pb-20">
+    <div className="max-w-4xl mx-auto py-10 px-4 animate-in fade-in slide-in-from-bottom-6 duration-500 pb-24">
       <div className="flex items-center justify-between mb-10">
-        <button onClick={onBack} className="text-slate-400 dark:text-slate-500 font-bold hover:text-slate-900 dark:hover:text-white flex items-center gap-2 group">
+        <button onClick={onBack} className="text-slate-400 dark:text-slate-500 font-bold hover:text-slate-900 dark:hover:text-white flex items-center gap-2 group p-2">
           <span className="group-hover:-translate-x-1 transition-transform">←</span> Geri Dön
         </button>
-        <h2 className="text-2xl font-serif font-black text-slate-900 dark:text-white uppercase tracking-widest">Uygulama Ayarları</h2>
+        <h2 className="text-2xl font-serif font-black text-slate-900 dark:text-white uppercase tracking-widest">Tedrisat Ayarları</h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -89,7 +90,36 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack, theme, onToggleThem
             </div>
           </div>
 
-          {/* Storage Section */}
+          {/* Public Access Info */}
+          <div className="bg-hunkar text-altin p-8 rounded-[2.5rem] shadow-xl border-2 border-altin relative overflow-hidden">
+             <div className="relative z-10">
+               <h3 className="text-lg font-display font-black mb-4 uppercase tracking-widest">Diğer Öğrenciler İçin</h3>
+               <p className="text-xs font-serif italic leading-relaxed opacity-90 mb-6">
+                 Bu uygulamayı diğer AUZEF öğrencileriyle paylaşırken "Google Drive" özelliğini kullanabilmeleri için geliştirici (Oğuz) tarafından onaylanmaları veya uygulamanın "Public" moda alınması gerekir.
+               </p>
+               <button 
+                 onClick={() => setShowDevNotes(!showDevNotes)}
+                 className="text-[10px] font-black underline uppercase tracking-widest"
+               >
+                 {showDevNotes ? "KAPAT" : "YAYINLAMA REHBERİNİ GÖR"}
+               </button>
+               
+               {showDevNotes && (
+                 <div className="mt-4 pt-4 border-t border-altin/20 space-y-4 animate-in slide-in-from-top-2">
+                    <p className="text-[10px] leading-relaxed">
+                      1. Google Cloud Console > OAuth Consent Screen > <b>"Publish App"</b> deyin.<br/>
+                      2. Bu sayede manuel mail eklemenize gerek kalmaz.<br/>
+                      3. Google onay verene kadar kullanıcılar "Gelişmiş > Yine de devam et" diyerek giriş yapabilir.
+                    </p>
+                 </div>
+               )}
+             </div>
+             <div className="absolute -right-4 -bottom-4 text-7xl opacity-10">📢</div>
+          </div>
+        </div>
+
+        {/* Storage Section */}
+        <div className="space-y-8">
           <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-slate-800">
              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Veri Kullanımı</h3>
              <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl mb-4">
@@ -111,19 +141,16 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack, theme, onToggleThem
                </button>
              </div>
           </div>
-        </div>
-
-        {/* Support and Credits Section */}
-        <div className="space-y-8">
-          <SupportCard />
           
-          <div className="bg-slate-100 dark:bg-slate-800 p-8 rounded-[2.5rem] text-center border-2 border-slate-200 dark:border-slate-700 shadow-inner">
-            <div className="text-3xl mb-4">🚀</div>
-            <div className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Versiyon</div>
-            <div className="text-sm font-mono font-bold text-slate-700 dark:text-slate-300">v2.5.0 Academic Edition</div>
-            <p className="mt-4 text-[10px] text-slate-400 font-serif italic">Müellif: Oğuz Bulut & Muavin AI</p>
-          </div>
+          <SupportCard />
         </div>
+      </div>
+
+      <div className="mt-12 p-8 bg-slate-100 dark:bg-slate-800 rounded-[2.5rem] text-center border-2 border-slate-200 dark:border-slate-700 shadow-inner">
+        <div className="text-3xl mb-4">🚀</div>
+        <div className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Versiyon</div>
+        <div className="text-sm font-mono font-bold text-slate-700 dark:text-slate-300">v2.6.0 Academic Edition</div>
+        <p className="mt-4 text-[10px] text-slate-400 font-serif italic">Müellif: Oğuz Bulut & Vakanüvis AI</p>
       </div>
     </div>
   );
