@@ -3,14 +3,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Course } from '../types';
 import { saveUnitPDF, getUnitPDF, getAllPDFKeys } from '../services/dbService';
 import { 
-  initGmailApi, 
-  searchAuzefPdfs, 
-  downloadAttachment, 
-  GmailAttachment, 
-  isGmailConfigured, 
+  initDriveApi, 
+  searchAuzefFiles, 
+  downloadDriveFile, 
+  DriveFile, 
+  isDriveConfigured, 
   getStoredClientId, 
   setStoredClientId 
-} from '../services/gmailService';
+} from '../services/driveService';
 
 declare const pdfjsLib: any;
 
@@ -28,12 +28,12 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
   const [currentPage, setCurrentPage] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Gmail States
-  const [isGmailModalOpen, setIsGmailModalOpen] = useState(false);
-  const [gmailAttachments, setGmailAttachments] = useState<GmailAttachment[]>([]);
-  const [isGmailSearching, setIsGmailSearching] = useState(false);
+  // Drive States
+  const [isDriveModalOpen, setIsDriveModalOpen] = useState(false);
+  const [driveFiles, setDriveFiles] = useState<DriveFile[]>([]);
+  const [isDriveSearching, setIsDriveSearching] = useState(false);
   const [tempClientId, setTempClientId] = useState(getStoredClientId());
-  const [showConfig, setShowConfig] = useState(!isGmailConfigured());
+  const [showConfig, setShowConfig] = useState(!isDriveConfigured());
 
   const units = Array.from({ length: 14 }, (_, i) => ({
     number: i + 1,
@@ -51,7 +51,7 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
     }
     loadUnit(selectedUnit);
     refreshPDFStatus();
-    initGmailApi().catch(() => {});
+    initDriveApi().catch(() => {});
   }, [course.id, selectedUnit]);
 
   const loadUnit = async (unitNum: number) => {
@@ -87,57 +87,63 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
     }
     setStoredClientId(tempClientId.trim());
     setShowConfig(false);
-    setIsGmailSearching(true);
+    setIsDriveSearching(true);
     try {
-      await initGmailApi();
-      const results = await searchAuzefPdfs();
-      setGmailAttachments(results);
+      await initDriveApi();
+      const results = await searchAuzefFiles();
+      setDriveFiles(results);
     } catch (error: any) {
-      console.error("Gmail hatası:", error);
+      console.error("Drive hatası:", error);
       if (error.message === "AUTH_CANCELED") {
         alert("Erişim reddedildi.");
       } else {
-        alert("Bağlantı kurulamadı. Client ID'nin doğruluğunu kontrol edin.");
+        alert("Bağlantı kurulamadı. Client ID'nin doğruluğunu ve yetkilerini kontrol edin.");
         setShowConfig(true);
       }
     } finally {
-      setIsGmailSearching(false);
+      setIsDriveSearching(false);
     }
   };
 
-  const handleGmailImport = async () => {
-    setIsGmailModalOpen(true);
-    if (isGmailConfigured()) {
+  const handleDriveImport = async () => {
+    setIsDriveModalOpen(true);
+    if (isDriveConfigured()) {
       setShowConfig(false);
-      setIsGmailSearching(true);
+      setIsDriveSearching(true);
       try {
-        const results = await searchAuzefPdfs();
-        setGmailAttachments(results);
+        const results = await searchAuzefFiles();
+        setDriveFiles(results);
       } catch (error: any) {
         if (error.message === "CONFIG_MISSING") setShowConfig(true);
         else setShowConfig(true);
       } finally {
-        setIsGmailSearching(false);
+        setIsDriveSearching(false);
       }
     } else {
       setShowConfig(true);
     }
   };
 
-  const importFromGmail = async (attachment: GmailAttachment) => {
-    setIsGmailSearching(true);
+  const importFromDrive = async (file: DriveFile) => {
+    setIsDriveSearching(true);
     try {
-      const blob = await downloadAttachment(attachment.messageId, attachment.id);
+      const blob = await downloadDriveFile(file.id);
       await saveUnitPDF(course.id, selectedUnit, blob);
       loadUnit(selectedUnit);
       refreshPDFStatus();
-      setIsGmailModalOpen(false);
+      setIsDriveModalOpen(false);
       if (onUploadSuccess) onUploadSuccess();
     } catch (error) {
-      alert("Hıfzetme hatası.");
+      alert("Hıfzetme hatası. Dosya indirilemedi.");
     } finally {
-      setIsGmailSearching(false);
+      setIsDriveSearching(false);
     }
+  };
+
+  const formatSize = (bytes?: string) => {
+    if (!bytes) return "Bilinmiyor";
+    const num = parseInt(bytes);
+    return (num / (1024 * 1024)).toFixed(1) + " MB";
   };
 
   return (
@@ -192,10 +198,10 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
                 <span>📥</span> DOSYADAN YÜKLE
               </button>
               <button
-                onClick={handleGmailImport}
+                onClick={handleDriveImport}
                 className="flex-1 sm:flex-none bg-white dark:bg-slate-800 text-slate-700 dark:text-altin border-2 border-slate-200 dark:border-altin/30 px-6 py-3 rounded-2xl font-display font-bold text-[10px] hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-lg tracking-widest"
               >
-                <img src="https://www.google.com/favicon.ico" className="w-4 h-4" alt="G" /> GMAIL'DEN AKTAR
+                <img src="https://www.gstatic.com/images/branding/product/2x/drive_48dp.png" className="w-4 h-4" alt="Drive" /> DRIVE'DAN AKTAR
               </button>
             </div>
             <input type="file" accept=".pdf" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
@@ -214,43 +220,43 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
               <div className="text-7xl mb-6 grayscale opacity-30">📜</div>
               <h3 className="text-xl font-display font-bold text-hunkar dark:text-altin uppercase">Başlangıç İçin Faslı Hıfzedin</h3>
               <p className="text-slate-500 dark:text-slate-400 text-sm mt-3 max-w-sm mx-auto mb-8 font-serif">
-                {selectedUnit}. Ünite kitabını dosya seçerek veya Gmail kutunuzdan tarayarak hıfzedebilirsiniz.
+                {selectedUnit}. Ünite kitabını dosya seçerek veya Google Drive hesabınızdan tarayarak hıfzedebilirsiniz.
               </p>
               <button 
-                onClick={handleGmailImport}
+                onClick={handleDriveImport}
                 className="bg-hunkar text-altin px-10 py-4 rounded-full font-display font-black text-sm tracking-widest shadow-xl hover:brightness-110 transition-all border-2 border-altin flex items-center gap-3"
               >
-                GMAIL İLE ARA 🔍
+                GOOGLE DRIVE'DA ARA 🔍
               </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* Gmail Import Modal */}
-      {isGmailModalOpen && (
+      {/* Google Drive Import Modal */}
+      {isDriveModalOpen && (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[3rem] p-8 shadow-2xl animate-in zoom-in-95 overflow-hidden flex flex-col max-h-[80vh]">
              <div className="flex items-center justify-between mb-8">
                <div className="flex items-center gap-4">
-                 <div className="w-12 h-12 bg-rose-600 rounded-2xl flex items-center justify-center shadow-lg">
-                   <img src="https://www.gstatic.com/images/branding/product/2x/gmail_48dp.png" className="w-8 h-8" alt="Gmail" />
+                 <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center shadow-lg border border-slate-100 dark:border-slate-700">
+                   <img src="https://www.gstatic.com/images/branding/product/2x/drive_48dp.png" className="w-8 h-8" alt="Drive" />
                  </div>
                  <div>
-                   <h3 className="text-xl font-display font-black text-slate-900 dark:text-white uppercase tracking-widest">Emanet-i Posta</h3>
-                   <p className="text-xs text-slate-500 dark:text-slate-400 font-serif italic">Google API Yapılandırması</p>
+                   <h3 className="text-xl font-display font-black text-slate-900 dark:text-white uppercase tracking-widest">Beytü'l-Hafıza</h3>
+                   <p className="text-xs text-slate-500 dark:text-slate-400 font-serif italic">Google Drive PDF Tarayıcı</p>
                  </div>
                </div>
-               <button onClick={() => setIsGmailModalOpen(false)} className="text-slate-400 hover:text-rose-500 transition-colors">✕</button>
+               <button onClick={() => setIsDriveModalOpen(false)} className="text-slate-400 hover:text-rose-500 transition-colors">✕</button>
              </div>
 
              {showConfig ? (
                <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-6">
                  <div className="text-5xl">🔐</div>
                  <div>
-                   <h4 className="font-display font-bold text-slate-800 dark:text-white text-lg">Hafıza Girişi Gerekli</h4>
+                   <h4 className="font-display font-bold text-slate-800 dark:text-white text-lg">Drive Bağlantısı Gerekli</h4>
                    <p className="text-sm text-slate-500 dark:text-slate-400 font-serif mt-2 max-w-sm">
-                     Gmail'e erişmek için Google Cloud projesinden aldığınız <b>Client ID</b>'yi bir kez tanımlamanız gerekir.
+                     Google Drive'a erişmek için Google Cloud projesinden aldığınız <b>Client ID</b>'yi tanımlamanız gerekir.
                    </p>
                  </div>
                  <div className="w-full max-w-sm space-y-3">
@@ -258,60 +264,65 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
                     type="text" 
                     value={tempClientId}
                     onChange={(e) => setTempClientId(e.target.value)}
-                    placeholder="77112345678-abcdef...apps.googleusercontent.com"
-                    className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-4 text-xs font-mono outline-none focus:border-rose-500 transition-all dark:text-white shadow-inner"
+                    placeholder="OAuth 2.0 Client ID giriniz..."
+                    className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-4 text-xs font-mono outline-none focus:border-indigo-500 transition-all dark:text-white shadow-inner"
                    />
                    <button 
                     onClick={saveConfigAndSearch}
-                    className="w-full bg-rose-600 text-white py-4 rounded-2xl font-display font-black text-[10px] tracking-widest shadow-xl hover:bg-rose-700 transition-all"
+                    className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-display font-black text-[10px] tracking-widest shadow-xl hover:bg-indigo-700 transition-all"
                    >
-                     KAYDET VE GMAIL'E BAĞLAN →
+                     KAYDET VE DRIVE'A BAĞLAN →
                    </button>
                  </div>
                  <p className="text-[10px] text-slate-400 font-serif italic">
-                   Client ID, tarayıcı hafızasına güvenle mühürlenir.
+                   İstemci kimliği sadece sizin tarayıcınızda saklanır.
                  </p>
                </div>
              ) : (
                <>
                  <div className="flex-1 overflow-y-auto pr-2 space-y-4 no-scrollbar">
-                    {isGmailSearching ? (
+                    {isDriveSearching ? (
                       <div className="py-20 text-center">
-                        <div className="w-12 h-12 border-4 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                        <p className="text-slate-500 font-serif italic">Mektuplar inceleniyor...</p>
+                        <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                        <p className="text-slate-500 font-serif italic">Drive mahzeni taranıyor...</p>
                       </div>
-                    ) : gmailAttachments.length === 0 ? (
+                    ) : driveFiles.length === 0 ? (
                       <div className="py-20 text-center flex flex-col items-center">
                         <span className="text-5xl mb-4 grayscale">🔎</span>
-                        <p className="text-slate-500 font-serif italic mb-2">E-posta bulunamadı.</p>
-                        <button onClick={() => setShowConfig(true)} className="text-[10px] font-black text-rose-500 uppercase hover:underline">Yapılandırmayı Değiştir</button>
+                        <p className="text-slate-500 font-serif italic mb-2">Drive'da "auzef" isimli PDF bulunamadı.</p>
+                        <button onClick={() => setShowConfig(true)} className="text-[10px] font-black text-indigo-500 uppercase hover:underline">Yapılandırmayı Güncelle</button>
                       </div>
                     ) : (
-                      gmailAttachments.map((att, i) => (
-                        <div key={i} className="bg-slate-50 dark:bg-slate-800 p-5 rounded-3xl border border-slate-100 dark:border-slate-700 flex items-center justify-between group hover:border-rose-300 transition-all">
-                           <div className="flex-1 min-w-0 pr-4">
-                             <div className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1">{att.date}</div>
-                             <h4 className="font-bold text-slate-800 dark:text-white truncate text-sm mb-1">{att.subject}</h4>
-                             <p className="text-[10px] text-slate-500 truncate font-mono uppercase tracking-tighter">📎 {att.filename}</p>
+                      driveFiles.map((file, i) => (
+                        <div key={i} className="bg-slate-50 dark:bg-slate-800 p-5 rounded-3xl border border-slate-100 dark:border-slate-700 flex items-center justify-between group hover:border-indigo-300 transition-all">
+                           <div className="flex-1 min-w-0 pr-4 flex items-center gap-3">
+                             <div className="w-10 h-10 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center text-xl shrink-0">📄</div>
+                             <div className="truncate">
+                               <h4 className="font-bold text-slate-800 dark:text-white truncate text-sm mb-1">{file.name}</h4>
+                               <div className="flex items-center gap-2">
+                                  <span className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">{formatSize(file.size)}</span>
+                                  <span className="text-[9px] text-slate-400">• {new Date(file.modifiedTime).toLocaleDateString('tr-TR')}</span>
+                               </div>
+                             </div>
                            </div>
                            <button 
-                            onClick={() => importFromGmail(att)}
+                            onClick={() => importFromDrive(file)}
                             className="bg-hunkar text-altin px-6 py-2.5 rounded-xl font-display font-bold text-[10px] tracking-widest shadow-md hover:brightness-125 transition-all whitespace-nowrap"
                            >
-                             HIFZET ✒️
+                             HIFZET 🖋️
                            </button>
                         </div>
                       ))
                     )}
                  </div>
                  <div className="mt-4 text-center">
-                    <button onClick={() => setShowConfig(true)} className="text-[9px] font-black text-slate-400 uppercase tracking-widest hover:text-rose-500">⚙️ Yapılandırmayı Güncelle</button>
+                    <button onClick={() => setShowConfig(true)} className="text-[9px] font-black text-slate-400 uppercase tracking-widest hover:text-indigo-500">⚙️ Yapılandırmayı Güncelle</button>
                  </div>
                </>
              )}
              
              <div className="mt-8 pt-4 border-t border-slate-100 dark:border-slate-800 text-center">
-                <p className="text-[10px] text-slate-400 font-serif italic">Verileriniz Google Gizlilik Politikası kapsamında korunur.</p>
+                <p className="text-[10px] text-slate-400 font-serif italic">Dosyalar doğrudan cihazınızın mahzenine hıfzedilir.</p>
              </div>
           </div>
         </div>
