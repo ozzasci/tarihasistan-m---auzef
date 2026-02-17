@@ -26,24 +26,23 @@ export const fetchAuzefNews = async (): Promise<string[]> => {
   try {
     const response = await ai.models.generateContent({
       model: DEFAULT_MODEL,
-      contents: "İstanbul Üniversitesi AUZEF 2024-2025 Bahar dönemi güncel sınav takvimini (Vize, Final, Bütünleme), ders kayıt tarihlerini ve öğrenci duyurularını tek satırlık kısa başlıklar halinde (Maksimum 6 madde) ver.",
+      contents: "İstanbul Üniversitesi AUZEF 2025-2026 Eğitim-Öğretim yılı akademik takvimini (Kayıt yenileme, Güz ve Bahar sınavları) araştır ve en güncel tarihleri kısa başlıklar halinde ver.",
       config: {
-        systemInstruction: "Sen bir akademik asistansın. Sadece resmi auzef.istanbul.edu.tr verilerini kullan. Tarihleri kesin ve güncel ver. Her haberin başına ilgili bir emoji ekle.",
+        systemInstruction: "Sen bir akademik asistansın. Sadece resmi auzef.istanbul.edu.tr verilerini kullan. 2025 ve 2026 yıllarına ait en güncel sınav ve kayıt tarihlerini kesin olarak ver. Her haberin başına ilgili bir emoji ekle.",
         tools: [{ googleSearch: {} }]
       }
     });
-    // Yanıtı satırlara böl ve temizle
     const news = response.text?.split('\n').filter(line => line.trim().length > 10).map(line => line.replace(/^\d+\.\s*/, '').trim()) || [];
     return news.length > 0 ? news : [
-      "📢 BAHAR DÖNEMİ ARA SINAV (VİZE): 26-27 NİSAN 2025",
-      "🎓 BAHAR DÖNEMİ BİTİRME (FİNAL): 14-15 HAZİRAN 2025",
-      "📜 BÜTÜNLEME SINAVLARI: 26-27 TEMMUZ 2025",
-      "🏛️ MEZUNİYET ÜÇ DERS SINAVI: 24 AĞUSTOS 2025"
+      "📢 2025-2026 GÜZ DÖNEMİ KAYIT YENİLEME: EYLÜL 2025",
+      "📜 GÜZ DÖNEMİ ARA SINAVLARI (VİZE): KASIM 2025",
+      "🎓 GÜZ DÖNEMİ FİNAL SINAVLARI: OCAK 2026",
+      "🏛️ BAHAR DÖNEMİ VİZE SINAVLARI: NİSAN 2026"
     ];
   } catch (err) {
     return [
-      "⚠️ CANLI VERİ ALINAMADI: RESMİ TAKVİME GÖRE VİZE 26-27 NİSAN 2025",
-      "🎓 FİNAL SINAVLARI: 14-15 HAZİRAN 2025"
+      "⚠️ CANLI TAKVİM ALINAMADI: LÜTFEN 2025-2026 RESMİ SİTESİNİ KONTROL EDİNİZ.",
+      "🎓 TAHMİNİ FİNAL: HAZİRAN 2026"
     ];
   }
 };
@@ -51,18 +50,8 @@ export const fetchAuzefNews = async (): Promise<string[]> => {
 export const generateSummary = async (courseName: string, pdfBase64?: string): Promise<StudySummary> => {
   const ai = getAI();
   if (!ai) throw new Error("AI başlatılamadı");
-
-  const parts: any[] = [{ text: `AUZEF Tarih 3. Sınıf müfredatına uygun olarak "${courseName}" dersi için detaylı bir akademik özet hazırla. Ekli bir belge varsa, o belgedeki bilgileri birincil kaynak olarak kullan.` }];
-  
-  if (pdfBase64) {
-    parts.push({
-      inlineData: {
-        mimeType: "application/pdf",
-        data: pdfBase64
-      }
-    });
-  }
-
+  const parts: any[] = [{ text: `AUZEF Tarih 3. Sınıf müfredatına uygun olarak "${courseName}" dersi için detaylı bir akademik özet hazırla. Ayrıca bu üniteyi en iyi anlatan, ünite içinde geçen veya üniteyle ilişkili bir özlü sözü (motto) belirle.` }];
+  if (pdfBase64) parts.push({ inlineData: { mimeType: "application/pdf", data: pdfBase64 } });
   try {
     const response = await ai.models.generateContent({
       model: DEFAULT_MODEL,
@@ -75,17 +64,16 @@ export const generateSummary = async (courseName: string, pdfBase64?: string): P
           properties: {
             title: { type: Type.STRING },
             content: { type: Type.STRING },
+            motto: { type: Type.STRING, description: "Üniteyi özetleyen veya ünite girişinde yer alan hikmetli söz." },
             keyDates: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { date: { type: Type.STRING }, event: { type: Type.STRING } } } },
             importantFigures: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { name: { type: Type.STRING }, role: { type: Type.STRING } } } }
           },
-          required: ["title", "content", "keyDates", "importantFigures"]
+          required: ["title", "content", "motto", "keyDates", "importantFigures"]
         }
       }
     });
     return JSON.parse(response.text || '{}');
-  } catch (err) {
-    return handleAIError(err);
-  }
+  } catch (err) { return handleAIError(err); }
 };
 
 export const generateWeeklyPlan = async (studentName: string, courses: string[], availability: DayAvailability[]): Promise<WeeklyPlan> => {

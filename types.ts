@@ -61,7 +61,7 @@ export interface Course {
   color: string;
   icon: string;
   pdfUrl?: string;
-  videoUrl?: string; // Yeni alan
+  videoUrl?: string;
   progress?: number;
   featuredCharacter?: HistoryCharacter;
   units?: Unit[];
@@ -102,6 +102,7 @@ export interface StudySummary {
   content: string;
   keyDates: { date: string; event: string }[];
   importantFigures: { name: string; role: string }[];
+  motto?: string; // Yeni: Üniteye özel özlü söz
 }
 
 export interface ComparisonResult {

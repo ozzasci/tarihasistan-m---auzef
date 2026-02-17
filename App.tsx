@@ -17,8 +17,9 @@ import AchievementsView from './components/AchievementsView';
 import ComparisonView from './components/ComparisonView';
 import GeographyView from './components/GeographyView';
 import VideoView from './components/VideoView';
-import UsefulLinksView from './components/UsefulLinksView'; // Yeni import
-import NewsTicker from './components/NewsTicker'; // Yeni import
+import UsefulLinksView from './components/UsefulLinksView';
+import NewsTicker from './components/NewsTicker';
+import DailyQuote from './components/DailyQuote'; // Yeni import
 import AuthView from './components/AuthView';
 import ProfileView from './components/ProfileView';
 import SettingsView from './components/SettingsView';
@@ -26,7 +27,7 @@ import CommunityView from './components/CommunityView';
 import WeeklyPlanner from './components/WeeklyPlanner';
 import { getCurrentUser, checkUnitExists } from './services/dbService';
 
-type ViewState = 'home' | 'course' | 'library' | 'achievements' | 'comparison' | 'profile' | 'settings' | 'community' | 'planner' | 'useful_links'; // useful_links eklendi
+type ViewState = 'home' | 'course' | 'library' | 'achievements' | 'comparison' | 'profile' | 'settings' | 'community' | 'planner' | 'useful_links';
 type TabState = 'pdf' | 'study' | 'video' | 'geography' | 'genealogy' | 'flashcards' | 'interview' | 'quiz' | 'chat' | 'glossary';
 
 const App: React.FC = () => {
@@ -142,7 +143,10 @@ const App: React.FC = () => {
             <h1 className="text-4xl sm:text-6xl font-display text-hunkar dark:text-altin mb-2 tracking-widest drop-shadow-sm uppercase">Vakanüvis</h1>
             <p className="text-enderun dark:text-orange-200/60 font-serif italic text-base sm:text-lg px-4">Safa geldiniz, {user.name.split(' ')[0]}. Tedrisatınıza nereden devam edelim?</p>
             
-            <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mt-10 sm:mt-12">
+            {/* Günün Kelâm-ı Kibarı */}
+            <DailyQuote />
+
+            <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mt-6 sm:mt-8">
               {[
                 { id: 'planner', icon: '📜', label: 'Haftalık Program', color: 'border-hunkar text-hunkar' },
                 { id: 'library', icon: '🏛️', label: 'Beytü\'l-Hikme', color: 'border-enderun text-enderun' },
@@ -301,7 +305,6 @@ const App: React.FC = () => {
           </div>
         </div>
       </nav>
-      {/* Haber Bandı Navigation'ın hemen altına eklendi */}
       <NewsTicker /> 
       <main className="max-w-5xl mx-auto">{renderContent()}</main>
     </div>

@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { getAllPDFs, deleteAllPDFs } from '../services/dbService';
+import SupportCard from './SupportCard';
 
 interface SettingsViewProps {
   onBack: () => void;
@@ -43,16 +44,16 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack, theme, onToggleThem
   };
 
   return (
-    <div className="max-w-4xl mx-auto py-10 px-4 animate-in fade-in slide-in-from-bottom-6 duration-500">
+    <div className="max-w-4xl mx-auto py-10 px-4 animate-in fade-in slide-in-from-bottom-6 duration-500 pb-20">
       <div className="flex items-center justify-between mb-10">
         <button onClick={onBack} className="text-slate-400 dark:text-slate-500 font-bold hover:text-slate-900 dark:hover:text-white flex items-center gap-2 group">
           <span className="group-hover:-translate-x-1 transition-transform">←</span> Geri Dön
         </button>
-        <h2 className="text-2xl font-serif font-black text-slate-900 dark:text-white">Uygulama Ayarları</h2>
+        <h2 className="text-2xl font-serif font-black text-slate-900 dark:text-white uppercase tracking-widest">Uygulama Ayarları</h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="space-y-6">
+        <div className="space-y-8">
           {/* App Config Section */}
           <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-slate-800">
             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
@@ -112,61 +113,15 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack, theme, onToggleThem
           </div>
         </div>
 
-        {/* Support Corner */}
-        <div className="space-y-6">
-          <div className="bg-indigo-900 text-white p-8 rounded-[3rem] shadow-2xl relative overflow-hidden">
-            <h3 className="text-xl font-serif font-bold mb-4 relative z-10 flex items-center gap-3">
-              <span>💎</span> Destek ve İletişim
-            </h3>
-            <p className="text-indigo-100 text-sm leading-relaxed mb-8 relative z-10 opacity-90 italic">
-              "Bu uygulama AUZEF Tarih öğrencilerinin çalışma sürecini modernize etmek için tasarlanmıştır. Teknik destek için resmi kanallarımıza katılabilirsiniz."
-            </p>
-            
-            <div className="space-y-3 relative z-10">
-              <a 
-                href="https://t.me/vakanuvis_ders_sistemi" 
-                target="_blank" 
-                rel="noreferrer"
-                className="flex items-center justify-between p-4 bg-white/10 hover:bg-white/20 rounded-2xl border border-white/10 transition-all group"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">📢</span>
-                  <div className="text-sm font-bold">Resmi Bilgi Paylaşım Kanalı</div>
-                </div>
-                <span className="text-xs font-black opacity-40 group-hover:opacity-100 transition-opacity">KATIL →</span>
-              </a>
-
-              <a 
-                href="https://t.me/a_OLt1ZGIa/23312" 
-                target="_blank" 
-                rel="noreferrer"
-                className="flex items-center justify-between p-4 bg-white/10 hover:bg-white/20 rounded-2xl border border-white/10 transition-all group"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">🏹</span>
-                  <div className="text-sm font-bold">3. Sınıf Çalışma Grubu</div>
-                </div>
-                <span className="text-xs font-black opacity-40 group-hover:opacity-100 transition-opacity">KATIL →</span>
-              </a>
-
-              <a 
-                href="https://t.me/+he-1RZGOuJsyNDI0" 
-                target="_blank" 
-                rel="noreferrer"
-                className="flex items-center justify-between p-4 bg-white/10 hover:bg-white/20 rounded-2xl border border-white/10 transition-all group"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">🛡️</span>
-                  <div className="text-sm font-bold">Uygulama Destek Hattı</div>
-                </div>
-                <span className="text-xs font-black opacity-40 group-hover:opacity-100 transition-opacity">KATIL →</span>
-              </a>
-            </div>
-          </div>
-          <div className="bg-slate-100 dark:bg-slate-800 p-8 rounded-[2.5rem] text-center">
+        {/* Support and Credits Section */}
+        <div className="space-y-8">
+          <SupportCard />
+          
+          <div className="bg-slate-100 dark:bg-slate-800 p-8 rounded-[2.5rem] text-center border-2 border-slate-200 dark:border-slate-700 shadow-inner">
             <div className="text-3xl mb-4">🚀</div>
             <div className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Versiyon</div>
-            <div className="text-sm font-mono font-bold text-slate-700 dark:text-slate-300">v2.1.0 Pro Edition</div>
+            <div className="text-sm font-mono font-bold text-slate-700 dark:text-slate-300">v2.5.0 Academic Edition</div>
+            <p className="mt-4 text-[10px] text-slate-400 font-serif italic">Müellif: Oğuz Bulut & Muavin AI</p>
           </div>
         </div>
       </div>
