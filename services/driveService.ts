@@ -1,6 +1,9 @@
 
-// Oğuz, Google Drive entegrasyonu için MASTER_CLIENT_ID'yi koda yazabilir 
-// veya kullanıcıların arayüzden girmesini sağlayabilirsin.
+/**
+ * Oğuz, Google Cloud Console'dan aldığın Client ID'yi aşağıdaki tırnakların içine yazarsan
+ * uygulama herkes için otomatik olarak çalışır.
+ * Boş bırakırsan kullanıcıların kendi ID'lerini girmeleri gerekir.
+ */
 let MASTER_CLIENT_ID = ""; 
 
 export const getStoredClientId = () => {
@@ -11,7 +14,6 @@ export const setStoredClientId = (id: string) => {
   localStorage.setItem('google_client_id', id);
 };
 
-// Google Drive Read-Only Scope
 const SCOPES = "https://www.googleapis.com/auth/drive.readonly";
 
 export interface DriveFile {
@@ -25,9 +27,8 @@ export interface DriveFile {
 
 let tokenClient: any = null;
 let gapiInited = false;
-let gisInited = false;
 
-export const isDriveConfigured = () => getStoredClientId().length > 0;
+export const isDriveConfigured = () => getStoredClientId().trim().length > 0;
 
 export const initDriveApi = (): Promise<void> => {
   return new Promise((resolve, reject) => {
@@ -35,8 +36,7 @@ export const initDriveApi = (): Promise<void> => {
     const google = (window as any).google;
 
     if (!gapi || !google) {
-      console.error("Google API kütüphaneleri bulunamadı.");
-      return;
+      return reject(new Error("Google kütüphaneleri yüklenemedi."));
     }
 
     gapi.load('client', async () => {
@@ -53,7 +53,6 @@ export const initDriveApi = (): Promise<void> => {
             scope: SCOPES,
             callback: '', 
           });
-          gisInited = true;
         }
         resolve();
       } catch (err) {
@@ -70,7 +69,8 @@ export const searchAuzefFiles = async (): Promise<DriveFile[]> => {
   const gapi = (window as any).gapi;
   const google = (window as any).google;
 
-  if (!tokenClient) {
+  // Re-init tokenClient if ID changed or not set
+  if (!tokenClient || tokenClient.client_id !== clientId) {
     tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: clientId,
       scope: SCOPES,
@@ -83,12 +83,17 @@ export const searchAuzefFiles = async (): Promise<DriveFile[]> => {
     try {
       await new Promise((resolve, reject) => {
         tokenClient.callback = (resp: any) => {
-          if (resp.error !== undefined) reject(resp);
+          if (resp.error !== undefined) {
+            // Eğer Google "invalid_client" dönerse bunu yakala
+            if (resp.error === 'invalid_client') reject(new Error("INVALID_CLIENT"));
+            reject(resp);
+          }
           resolve(resp);
         };
         tokenClient.requestAccessToken({ prompt: 'consent' });
       });
-    } catch (err) {
+    } catch (err: any) {
+      if (err.message === "INVALID_CLIENT") throw err;
       throw new Error("AUTH_CANCELED");
     }
   }
@@ -102,29 +107,23 @@ export const searchAuzefFiles = async (): Promise<DriveFile[]> => {
     });
 
     return response.result.files || [];
-  } catch (err) {
-    console.error("Drive arama hatası:", err);
+  } catch (err: any) {
+    if (err.status === 401) throw new Error("INVALID_CLIENT");
     throw err;
   }
 };
 
 export const downloadDriveFile = async (fileId: string): Promise<Blob> => {
   const gapi = (window as any).gapi;
-  try {
-    const response = await gapi.client.drive.files.get({
-      fileId: fileId,
-      alt: 'media',
-    });
-    
-    // GAPI media indirmelerinde response.body string veya arraybuffer dönebilir
-    const body = response.body;
-    const bytes = new Uint8Array(body.length);
-    for (let i = 0; i < body.length; i++) {
-      bytes[i] = body.charCodeAt(i);
-    }
-    return new Blob([bytes], { type: 'application/pdf' });
-  } catch (err) {
-    console.error("Dosya indirme hatası:", err);
-    throw err;
+  const response = await gapi.client.drive.files.get({
+    fileId: fileId,
+    alt: 'media',
+  });
+  
+  const body = response.body;
+  const bytes = new Uint8Array(body.length);
+  for (let i = 0; i < body.length; i++) {
+    bytes[i] = body.charCodeAt(i);
   }
+  return new Blob([bytes], { type: 'application/pdf' });
 };

@@ -34,6 +34,8 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
   const [isDriveSearching, setIsDriveSearching] = useState(false);
   const [tempClientId, setTempClientId] = useState(getStoredClientId());
   const [showConfig, setShowConfig] = useState(!isDriveConfigured());
+  const [configError, setConfigError] = useState<string | null>(null);
+  const [showGuide, setShowGuide] = useState(false);
 
   const units = Array.from({ length: 14 }, (_, i) => ({
     number: i + 1,
@@ -81,23 +83,30 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
   };
 
   const saveConfigAndSearch = async () => {
-    if (!tempClientId.trim()) {
-      alert("Lütfen geçerli bir Google Client ID giriniz.");
+    setConfigError(null);
+    const cleanedId = tempClientId.trim();
+    if (!cleanedId) {
+      setConfigError("Lütfen bir Client ID giriniz.");
       return;
     }
-    setStoredClientId(tempClientId.trim());
-    setShowConfig(false);
+    
+    setStoredClientId(cleanedId);
     setIsDriveSearching(true);
     try {
       await initDriveApi();
       const results = await searchAuzefFiles();
       setDriveFiles(results);
+      setShowConfig(false);
     } catch (error: any) {
       console.error("Drive hatası:", error);
-      if (error.message === "AUTH_CANCELED") {
-        alert("Erişim reddedildi.");
+      if (error.message === "INVALID_CLIENT") {
+        setConfigError("Geçersiz Client ID veya yetkisiz erişim. Lütfen Google Cloud Console'da 'Authorized JavaScript origins' ayarını kontrol edin.");
+        setShowConfig(true);
+      } else if (error.message === "AUTH_CANCELED") {
+        setConfigError("Oturum işlemi iptal edildi.");
+        setShowConfig(true);
       } else {
-        alert("Bağlantı kurulamadı. Client ID'nin doğruluğunu ve yetkilerini kontrol edin.");
+        setConfigError("Bağlantı hatası. ID'yi ve internetinizi kontrol edin.");
         setShowConfig(true);
       }
     } finally {
@@ -107,6 +116,7 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
 
   const handleDriveImport = async () => {
     setIsDriveModalOpen(true);
+    setConfigError(null);
     if (isDriveConfigured()) {
       setShowConfig(false);
       setIsDriveSearching(true);
@@ -114,8 +124,10 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
         const results = await searchAuzefFiles();
         setDriveFiles(results);
       } catch (error: any) {
-        if (error.message === "CONFIG_MISSING") setShowConfig(true);
-        else setShowConfig(true);
+        setShowConfig(true);
+        if (error.message === "INVALID_CLIENT") {
+          setConfigError("Kayıtlı Client ID geçersiz. Lütfen ayarları güncelleyin.");
+        }
       } finally {
         setIsDriveSearching(false);
       }
@@ -236,47 +248,102 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
       {/* Google Drive Import Modal */}
       {isDriveModalOpen && (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[3rem] p-8 shadow-2xl animate-in zoom-in-95 overflow-hidden flex flex-col max-h-[80vh]">
-             <div className="flex items-center justify-between mb-8">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[3rem] p-8 shadow-2xl animate-in zoom-in-95 overflow-hidden flex flex-col max-h-[90vh]">
+             <div className="flex items-center justify-between mb-6">
                <div className="flex items-center gap-4">
                  <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center shadow-lg border border-slate-100 dark:border-slate-700">
                    <img src="https://www.gstatic.com/images/branding/product/2x/drive_48dp.png" className="w-8 h-8" alt="Drive" />
                  </div>
                  <div>
                    <h3 className="text-xl font-display font-black text-slate-900 dark:text-white uppercase tracking-widest">Beytü'l-Hafıza</h3>
-                   <p className="text-xs text-slate-500 dark:text-slate-400 font-serif italic">Google Drive PDF Tarayıcı</p>
+                   <p className="text-xs text-slate-500 dark:text-slate-400 font-serif italic">Google Drive Entegrasyonu</p>
                  </div>
                </div>
                <button onClick={() => setIsDriveModalOpen(false)} className="text-slate-400 hover:text-rose-500 transition-colors">✕</button>
              </div>
 
              {showConfig ? (
-               <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-6">
-                 <div className="text-5xl">🔐</div>
-                 <div>
-                   <h4 className="font-display font-bold text-slate-800 dark:text-white text-lg">Drive Bağlantısı Gerekli</h4>
-                   <p className="text-sm text-slate-500 dark:text-slate-400 font-serif mt-2 max-w-sm">
-                     Google Drive'a erişmek için Google Cloud projesinden aldığınız <b>Client ID</b>'yi tanımlamanız gerekir.
-                   </p>
-                 </div>
-                 <div className="w-full max-w-sm space-y-3">
-                   <input 
-                    type="text" 
-                    value={tempClientId}
-                    onChange={(e) => setTempClientId(e.target.value)}
-                    placeholder="OAuth 2.0 Client ID giriniz..."
-                    className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-4 text-xs font-mono outline-none focus:border-indigo-500 transition-all dark:text-white shadow-inner"
-                   />
-                   <button 
-                    onClick={saveConfigAndSearch}
-                    className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-display font-black text-[10px] tracking-widest shadow-xl hover:bg-indigo-700 transition-all"
-                   >
-                     KAYDET VE DRIVE'A BAĞLAN →
-                   </button>
-                 </div>
-                 <p className="text-[10px] text-slate-400 font-serif italic">
-                   İstemci kimliği sadece sizin tarayıcınızda saklanır.
-                 </p>
+               <div className="flex-1 flex flex-col items-center justify-start text-center p-2 space-y-6 overflow-y-auto no-scrollbar">
+                 <div className="text-5xl mt-4">🔐</div>
+                 
+                 {!showGuide ? (
+                   <>
+                     <div>
+                       <h4 className="font-display font-bold text-slate-800 dark:text-white text-lg">Erişim Anahtarı Gerekli</h4>
+                       <p className="text-sm text-slate-500 dark:text-slate-400 font-serif mt-2 max-w-sm">
+                         Drive'daki ders notlarına ulaşmak için Google Cloud'dan alacağınız <b>Client ID</b> gereklidir.
+                       </p>
+                       <button 
+                        onClick={() => setShowGuide(true)}
+                        className="text-[10px] text-indigo-500 underline uppercase font-black tracking-widest mt-4 inline-block"
+                       >
+                         ID Nasıl Alınır? (Görsel Rehber)
+                       </button>
+                     </div>
+                     
+                     <div className="w-full max-w-sm space-y-3">
+                       <input 
+                        type="text" 
+                        value={tempClientId}
+                        onChange={(e) => setTempClientId(e.target.value)}
+                        placeholder="OAuth 2.0 Client ID yapıştırın..."
+                        className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-4 text-xs font-mono outline-none focus:border-indigo-500 transition-all dark:text-white shadow-inner"
+                       />
+                       
+                       {configError && (
+                         <div className="bg-rose-50 dark:bg-rose-950/30 text-rose-600 p-4 rounded-2xl text-[10px] font-bold text-left border border-rose-200">
+                           ⚠️ {configError}
+                         </div>
+                       )}
+
+                       <button 
+                        onClick={saveConfigAndSearch}
+                        disabled={isDriveSearching}
+                        className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-display font-black text-[10px] tracking-widest shadow-xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
+                       >
+                         {isDriveSearching && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+                         KAYDET VE BAĞLAN →
+                       </button>
+                     </div>
+                   </>
+                 ) : (
+                   <div className="w-full text-left space-y-6 animate-in slide-in-from-right-4">
+                      <div className="bg-indigo-50 dark:bg-slate-800 p-6 rounded-[2rem] border border-indigo-100 dark:border-slate-700">
+                        <h5 className="font-display font-black text-indigo-700 dark:text-indigo-400 text-xs uppercase mb-4">3 Adımda Client ID Alın:</h5>
+                        <ul className="text-xs space-y-4 font-serif italic text-slate-600 dark:text-slate-300">
+                          <li><b>1.</b> <a href="https://console.cloud.google.com/" target="_blank" className="text-indigo-600 underline">Google Cloud Console</a>'da yeni bir proje oluşturun.</li>
+                          <li><b>2.</b> "APIs & Services > Library"den <b>"Google Drive API"</b>yi aktif edin.</li>
+                          <li><b>3.</b> "Credentials > Create OAuth Client ID" diyerek <b>"Web Application"</b> seçin.</li>
+                          <li className="bg-white dark:bg-black/20 p-4 rounded-xl border-2 border-indigo-200 dark:border-indigo-900 not-italic space-y-3">
+                            <span className="text-rose-600 font-black uppercase text-[10px] block">ÖNEMLİ ADIM (BU ADRESİ EKLEYİN):</span>
+                            <p className="text-[11px] text-slate-700 dark:text-slate-200">
+                              Google'da "Authorized JavaScript origins" kısmına aşağıdaki adresi birebir yapıştırmalısınız:
+                            </p>
+                            <div className="flex gap-2">
+                              <code className="bg-slate-100 dark:bg-slate-800 px-3 py-2 rounded-lg text-indigo-600 font-bold flex-1 break-all text-[10px]">
+                                {window.location.origin}
+                              </code>
+                              <button 
+                                onClick={() => {
+                                  navigator.clipboard.writeText(window.location.origin);
+                                  alert("Adres kopyalandı!");
+                                }}
+                                className="bg-indigo-600 text-white px-3 rounded-lg text-[9px] font-bold"
+                              >
+                                KOPYALA
+                              </button>
+                            </div>
+                          </li>
+                        </ul>
+                        <button 
+                          onClick={() => setShowGuide(false)}
+                          className="mt-6 w-full py-3 bg-white dark:bg-slate-700 text-indigo-600 dark:text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-indigo-100 dark:border-slate-600"
+                        >
+                          ← Geri Dön
+                        </button>
+                      </div>
+                   </div>
+                 )}
                </div>
              ) : (
                <>
@@ -321,8 +388,8 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
                </>
              )}
              
-             <div className="mt-8 pt-4 border-t border-slate-100 dark:border-slate-800 text-center">
-                <p className="text-[10px] text-slate-400 font-serif italic">Dosyalar doğrudan cihazınızın mahzenine hıfzedilir.</p>
+             <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 text-center">
+                <p className="text-[10px] text-slate-400 font-serif italic">Dosyalarınız IndexedDB mahzeninde güvenle saklanır.</p>
              </div>
           </div>
         </div>
