@@ -153,7 +153,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdate, onLogout, onB
   );
 };
 
-const CourseProgressRow = ({ course }: { course: any }) => {
+// Fix: Added React.FC type to handle the reserved 'key' prop correctly in TSX
+const CourseProgressRow: React.FC<{ course: any }> = ({ course }) => {
   const [prog, setProg] = useState(0);
   useEffect(() => { getProgress(course.id).then(setProg); }, [course.id]);
 

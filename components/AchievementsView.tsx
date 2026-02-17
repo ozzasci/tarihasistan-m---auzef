@@ -82,7 +82,8 @@ const AchievementsView: React.FC = () => {
     fetchAchievements();
   }, []);
 
-  const OttomanBadge = ({ ach }: { ach: Achievement }) => (
+  // Fix: Added React.FC type to handle the reserved 'key' prop correctly in TSX
+  const OttomanBadge: React.FC<{ ach: Achievement }> = ({ ach }) => (
     <div className={`relative group flex flex-col items-center text-center transition-all duration-700 ${ach.isUnlocked ? 'scale-100' : 'scale-95 opacity-40 grayscale'}`}>
       {/* Altın Varrak Efekti (Arka Plan) */}
       {ach.isUnlocked && (
