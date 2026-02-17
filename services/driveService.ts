@@ -58,10 +58,6 @@ export const initDriveApi = (): Promise<void> => {
   });
 };
 
-/**
- * Drive'da özel arama yapar.
- * @param searchTerm Kullanıcının aramak istediği kelime (varsayılan: auzef)
- */
 export const searchAuzefFiles = async (searchTerm: string = 'auzef'): Promise<DriveFile[]> => {
   const clientId = getStoredClientId();
   if (!clientId) throw new Error("CONFIG_MISSING");
@@ -83,7 +79,10 @@ export const searchAuzefFiles = async (searchTerm: string = 'auzef'): Promise<Dr
       await new Promise((resolve, reject) => {
         tokenClient.callback = (resp: any) => {
           if (resp.error !== undefined) {
-            if (resp.error === 'invalid_client') reject(new Error("INVALID_CLIENT"));
+            // Google'dan gelen spesifik hataları yakala
+            if (resp.error === 'invalid_client' || resp.details?.includes('OAuth client was not found')) {
+              reject(new Error("INVALID_CLIENT"));
+            }
             reject(resp);
           }
           resolve(resp);
@@ -97,22 +96,18 @@ export const searchAuzefFiles = async (searchTerm: string = 'auzef'): Promise<Dr
   }
 
   try {
-    // Arama terimini küçük harfe çevirip query oluşturuyoruz
     const query = `name contains '${searchTerm}' and mimeType = 'application/pdf' and trashed = false`;
-    
     const response = await gapi.client.drive.files.list({
       pageSize: 50,
       fields: 'files(id, name, mimeType, size, modifiedTime, thumbnailLink)',
       q: query,
       orderBy: 'modifiedTime desc',
-      // Paylaşılan dosyaları da içermesi için:
       includeItemsFromAllDrives: true,
       supportsAllDrives: true
     });
-
     return response.result.files || [];
   } catch (err: any) {
-    if (err.status === 401) throw new Error("INVALID_CLIENT");
+    if (err.status === 401 || (err.result?.error?.message?.includes('OAuth client'))) throw new Error("INVALID_CLIENT");
     throw err;
   }
 };
