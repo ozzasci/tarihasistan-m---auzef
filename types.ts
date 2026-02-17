@@ -61,9 +61,10 @@ export interface Course {
   color: string;
   icon: string;
   pdfUrl?: string;
+  videoUrl?: string; // Yeni alan
   progress?: number;
   featuredCharacter?: HistoryCharacter;
-  units?: Unit[]; // Her ders için ünite listesi
+  units?: Unit[];
 }
 
 export interface HistoryCharacter {

@@ -10,7 +10,6 @@ interface StudyViewProps {
   onUnitChange: (unit: number) => void;
 }
 
-// PDF'i Base64'e çeviren yardımcı fonksiyon
 const blobToBase64 = (blob: Blob): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -58,6 +57,7 @@ const StudyView: React.FC<StudyViewProps> = ({ course, selectedUnit, onUnitChang
   const [userNote, setUserNote] = useState("");
   const [isSavingNote, setIsSavingNote] = useState(false);
   const [uploadedKeys, setUploadedKeys] = useState<string[]>([]);
+  const [fontSize, setFontSize] = useState(1.25); // rem cinsinden varsayılan font boyutu
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
 
@@ -71,7 +71,6 @@ const StudyView: React.FC<StudyViewProps> = ({ course, selectedUnit, onUnitChang
     setLoading(true);
     setSummary(null);
     try {
-      // Önce PDF verisini mahzenden al
       const pdfBlob = await getUnitPDF(course.id, selectedUnit);
       let pdfBase64: string | undefined;
       
@@ -126,6 +125,10 @@ const StudyView: React.FC<StudyViewProps> = ({ course, selectedUnit, onUnitChang
     }
   };
 
+  const adjustFontSize = (delta: number) => {
+    setFontSize(prev => Math.min(Math.max(0.8, prev + delta), 2.5));
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-700 pb-safe">
       <div className="bg-hunkar p-4 rounded-[2rem] border-2 border-altin shadow-xl overflow-x-auto no-scrollbar">
@@ -163,7 +166,26 @@ const StudyView: React.FC<StudyViewProps> = ({ course, selectedUnit, onUnitChang
         <>
           <div className="bg-white/90 dark:bg-black/40 p-8 sm:p-12 rounded-[3rem] shadow-2xl border-x-8 border-altin/20 relative overflow-hidden rumi-border">
             <div className="absolute top-0 left-0 w-full h-4 bg-altin/50"></div>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10 relative z-10">
+            
+            {/* Dinamik Yakınlaştırma Kontrolleri */}
+            <div className="absolute top-6 right-8 z-50 flex items-center gap-2">
+              <button 
+                onClick={() => adjustFontSize(-0.1)}
+                className="w-10 h-10 bg-white dark:bg-slate-800 text-hunkar dark:text-altin rounded-full shadow-lg border-2 border-altin flex items-center justify-center font-bold text-lg active:scale-90 transition-transform"
+                title="Yazıyı Küçült"
+              >
+                A-
+              </button>
+              <button 
+                onClick={() => adjustFontSize(0.1)}
+                className="w-12 h-12 bg-hunkar text-altin rounded-full shadow-xl border-2 border-altin flex items-center justify-center font-bold text-xl active:scale-90 transition-transform"
+                title="Yazıyı Büyüt"
+              >
+                A+
+              </button>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10 relative z-10 pr-24 sm:pr-0">
               <div className="flex-1">
                  <h2 className="text-3xl sm:text-4xl font-display text-hunkar dark:text-altin leading-tight mb-2 tracking-wide uppercase">{selectedUnit === 1 ? '1. Fasıl (Mebde)' : `${selectedUnit}. Fasıl`}: {summary?.title}</h2>
                  <div className="w-24 h-1 bg-altin"></div>
@@ -175,7 +197,11 @@ const StudyView: React.FC<StudyViewProps> = ({ course, selectedUnit, onUnitChang
                 {isPlaying ? "⏸" : "▶"}
               </button>
             </div>
-            <div className="prose prose-slate dark:prose-invert max-w-none text-slate-800 dark:text-orange-50/80 leading-relaxed text-lg sm:text-xl font-serif italic mb-10 relative z-10">
+
+            <div 
+              style={{ fontSize: `${fontSize}rem` }}
+              className="prose prose-slate dark:prose-invert max-w-none text-slate-800 dark:text-orange-50/80 leading-relaxed font-serif italic mb-10 relative z-10 transition-all duration-300"
+            >
               {summary?.content}
             </div>
             

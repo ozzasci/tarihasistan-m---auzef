@@ -7,10 +7,11 @@ const STORE_USERS = 'users';
 const STORE_RESOURCES = 'shared_resources';
 const STORE_MESSAGES = 'messages';
 const STORE_STATS = 'stats';
+const STORE_VIDEO_URLS = 'video_urls'; // Yeni mahzen
 
 export const initDB = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 6);
+    const request = indexedDB.open(DB_NAME, 7); // Versiyon yükseltildi
     request.onupgradeneeded = () => {
       const db = request.result;
       if (!db.objectStoreNames.contains(STORE_PDFS)) db.createObjectStore(STORE_PDFS);
@@ -20,12 +21,30 @@ export const initDB = (): Promise<IDBDatabase> => {
       if (!db.objectStoreNames.contains(STORE_RESOURCES)) db.createObjectStore(STORE_RESOURCES, { keyPath: 'id' });
       if (!db.objectStoreNames.contains(STORE_MESSAGES)) db.createObjectStore(STORE_MESSAGES, { keyPath: 'id' });
       if (!db.objectStoreNames.contains(STORE_STATS)) db.createObjectStore(STORE_STATS);
+      if (!db.objectStoreNames.contains(STORE_VIDEO_URLS)) db.createObjectStore(STORE_VIDEO_URLS);
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
 };
 
+export const saveCourseVideoUrl = async (courseId: string, url: string) => {
+  const db = await initDB();
+  return db.transaction(STORE_VIDEO_URLS, 'readwrite').objectStore(STORE_VIDEO_URLS).put(url, courseId);
+};
+
+export const getCourseVideoUrl = async (courseId: string): Promise<string | null> => {
+  const db = await initDB();
+  const req = db.transaction(STORE_VIDEO_URLS, 'readonly').objectStore(STORE_VIDEO_URLS).get(courseId);
+  return new Promise((res) => { req.onsuccess = () => res(req.result || null); });
+};
+
+export const deleteCourseVideoUrl = async (courseId: string) => {
+  const db = await initDB();
+  return db.transaction(STORE_VIDEO_URLS, 'readwrite').objectStore(STORE_VIDEO_URLS).delete(courseId);
+};
+
+// ... Mevcut diğer fonksiyonlar (checkUnitExists, saveUnitPDF, getUnitPDF vb. olduğu gibi korunur)
 export const checkUnitExists = async (courseId: string, unitNumber: number): Promise<boolean> => {
   const db = await initDB();
   const tx = db.transaction(STORE_PDFS, 'readonly');

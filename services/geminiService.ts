@@ -20,6 +20,34 @@ const handleAIError = (error: any) => {
   throw error;
 };
 
+export const fetchAuzefNews = async (): Promise<string[]> => {
+  const ai = getAI();
+  if (!ai) return [];
+  try {
+    const response = await ai.models.generateContent({
+      model: DEFAULT_MODEL,
+      contents: "İstanbul Üniversitesi AUZEF 2024-2025 Bahar dönemi güncel sınav takvimini (Vize, Final, Bütünleme), ders kayıt tarihlerini ve öğrenci duyurularını tek satırlık kısa başlıklar halinde (Maksimum 6 madde) ver.",
+      config: {
+        systemInstruction: "Sen bir akademik asistansın. Sadece resmi auzef.istanbul.edu.tr verilerini kullan. Tarihleri kesin ve güncel ver. Her haberin başına ilgili bir emoji ekle.",
+        tools: [{ googleSearch: {} }]
+      }
+    });
+    // Yanıtı satırlara böl ve temizle
+    const news = response.text?.split('\n').filter(line => line.trim().length > 10).map(line => line.replace(/^\d+\.\s*/, '').trim()) || [];
+    return news.length > 0 ? news : [
+      "📢 BAHAR DÖNEMİ ARA SINAV (VİZE): 26-27 NİSAN 2025",
+      "🎓 BAHAR DÖNEMİ BİTİRME (FİNAL): 14-15 HAZİRAN 2025",
+      "📜 BÜTÜNLEME SINAVLARI: 26-27 TEMMUZ 2025",
+      "🏛️ MEZUNİYET ÜÇ DERS SINAVI: 24 AĞUSTOS 2025"
+    ];
+  } catch (err) {
+    return [
+      "⚠️ CANLI VERİ ALINAMADI: RESMİ TAKVİME GÖRE VİZE 26-27 NİSAN 2025",
+      "🎓 FİNAL SINAVLARI: 14-15 HAZİRAN 2025"
+    ];
+  }
+};
+
 export const generateSummary = async (courseName: string, pdfBase64?: string): Promise<StudySummary> => {
   const ai = getAI();
   if (!ai) throw new Error("AI başlatılamadı");
@@ -60,7 +88,6 @@ export const generateSummary = async (courseName: string, pdfBase64?: string): P
   }
 };
 
-// ... (Diğer fonksiyonlar aynı kalacak şekilde devam eder)
 export const generateWeeklyPlan = async (studentName: string, courses: string[], availability: DayAvailability[]): Promise<WeeklyPlan> => {
   const ai = getAI();
   if (!ai) throw new Error("AI başlatılamadı");

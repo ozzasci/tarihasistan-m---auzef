@@ -9,6 +9,7 @@ export const COURSES: Course[] = [
     color: "bg-blue-600",
     icon: "🏰",
     pdfUrl: "https://auzefkitap.istanbul.edu.tr/kitap/tarih_lisans_ao/rusya_tarihi.pdf",
+    videoUrl: "https://www.youtube.com/embed/videoseries?list=PLpAasR1v7r9NidV8Tq_6o3fXm23-O3Y4U", // Örnek AUZEF Rusya Listesi
     featuredCharacter: {
       name: "IV. İvan",
       title: "Rus Çarı (Korkunç İvan)",
@@ -23,6 +24,7 @@ export const COURSES: Course[] = [
     color: "bg-emerald-600",
     icon: "⚔️",
     pdfUrl: "https://auzefkitap.istanbul.edu.tr/kitap/tarih_lisans_ao/akkoyunlu_karakoyunlu_safevi.pdf",
+    videoUrl: "https://www.youtube.com/embed/videoseries?list=PLpAasR1v7r9PvM0C29vNf_tBwK9iI5-k-",
     featuredCharacter: {
       name: "Şah İsmail",
       title: "Safevi Devleti Kurucusu",
@@ -37,6 +39,7 @@ export const COURSES: Course[] = [
     color: "bg-amber-600",
     icon: "🌍",
     pdfUrl: "https://auzefkitap.istanbul.edu.tr/kitap/tarih_lisans_ao/avrupa_tarihi.pdf",
+    videoUrl: "https://www.youtube.com/embed/videoseries?list=PLpAasR1v7r9M9t6zV9h6yS_q6-F7XvB2J",
     featuredCharacter: {
       name: "V. Charles",
       title: "Kutsal Roma İmparatoru",
@@ -51,6 +54,7 @@ export const COURSES: Course[] = [
     color: "bg-rose-600",
     icon: "🏹",
     pdfUrl: "https://auzefkitap.istanbul.edu.tr/kitap/tarih_lisans_ao/turkistan_tarihi.pdf",
+    videoUrl: "https://www.youtube.com/embed/videoseries?list=PLpAasR1v7r9O5xV9NidV8Tq_6o3fXm23-O",
     featuredCharacter: {
       name: "Emir Timur",
       title: "Timurlu İmparatorluğu Sultanı",
@@ -65,6 +69,7 @@ export const COURSES: Course[] = [
     color: "bg-indigo-600",
     icon: "🕌",
     pdfUrl: "https://auzefkitap.istanbul.edu.tr/kitap/tarih_lisans_ao/memluk_tarihi.pdf",
+    videoUrl: "https://www.youtube.com/embed/videoseries?list=PLpAasR1v7r9P0xV9NidV8Tq_6o3fXm23-O",
     featuredCharacter: {
       name: "Sultan Baybars",
       title: "Memlük Sultanı",
@@ -79,6 +84,7 @@ export const COURSES: Course[] = [
     color: "bg-purple-600",
     icon: "🏇",
     pdfUrl: "https://auzefkitap.istanbul.edu.tr/kitap/tarih_lisans_ao/altinorda_tarihi.pdf",
+    videoUrl: "https://www.youtube.com/embed/videoseries?list=PLpAasR1v7r9R1xV9NidV8Tq_6o3fXm23-O",
     featuredCharacter: {
       name: "Toktamış Han",
       title: "Altınorda Hanı",

@@ -16,6 +16,9 @@ import GenealogyView from './components/GenealogyView';
 import AchievementsView from './components/AchievementsView';
 import ComparisonView from './components/ComparisonView';
 import GeographyView from './components/GeographyView';
+import VideoView from './components/VideoView';
+import UsefulLinksView from './components/UsefulLinksView'; // Yeni import
+import NewsTicker from './components/NewsTicker'; // Yeni import
 import AuthView from './components/AuthView';
 import ProfileView from './components/ProfileView';
 import SettingsView from './components/SettingsView';
@@ -23,8 +26,8 @@ import CommunityView from './components/CommunityView';
 import WeeklyPlanner from './components/WeeklyPlanner';
 import { getCurrentUser, checkUnitExists } from './services/dbService';
 
-type ViewState = 'home' | 'course' | 'library' | 'achievements' | 'comparison' | 'profile' | 'settings' | 'community' | 'planner';
-type TabState = 'pdf' | 'study' | 'quiz' | 'chat' | 'interview' | 'glossary' | 'flashcards' | 'genealogy' | 'geography';
+type ViewState = 'home' | 'course' | 'library' | 'achievements' | 'comparison' | 'profile' | 'settings' | 'community' | 'planner' | 'useful_links'; // useful_links eklendi
+type TabState = 'pdf' | 'study' | 'video' | 'geography' | 'genealogy' | 'flashcards' | 'interview' | 'quiz' | 'chat' | 'glossary';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -105,6 +108,10 @@ const App: React.FC = () => {
       return <WeeklyPlanner user={user} onBack={() => setCurrentView('home')} />;
     }
 
+    if (currentView === 'useful_links') {
+      return <UsefulLinksView onBack={() => setCurrentView('home')} />;
+    }
+
     if (currentView === 'achievements') {
       return (
         <div className="animate-in fade-in duration-500 pb-safe">
@@ -139,6 +146,7 @@ const App: React.FC = () => {
               {[
                 { id: 'planner', icon: '📜', label: 'Haftalık Program', color: 'border-hunkar text-hunkar' },
                 { id: 'library', icon: '🏛️', label: 'Beytü\'l-Hikme', color: 'border-enderun text-enderun' },
+                { id: 'useful_links', icon: '🔗', label: 'Mecmua-i Link', color: 'border-altin text-altin' },
                 { id: 'community', icon: '🤝', label: 'Meclis-i İrfan', color: 'border-selcuk text-selcuk' },
                 { id: 'comparison', icon: '⚖️', label: 'Vaka-i Mütalaa', color: 'border-amber-700 text-amber-700' }
               ].map(item => (
@@ -170,7 +178,7 @@ const App: React.FC = () => {
     const renderTabContent = () => {
       if (activeTab === 'pdf') return <PDFView course={selectedCourse} selectedUnit={selectedUnit} onUnitChange={setSelectedUnit} onUploadSuccess={checkPdfStatus} />;
       
-      if (!hasPdf) {
+      if (!hasPdf && activeTab !== 'video') {
         return (
           <div className="py-20 flex flex-col items-center justify-center text-center animate-in fade-in duration-500">
             <div className="w-24 h-24 bg-hunkar/10 text-hunkar rounded-full flex items-center justify-center text-5xl mb-6 border-4 border-hunkar/20 border-dashed">🔒</div>
@@ -190,6 +198,7 @@ const App: React.FC = () => {
 
       switch (activeTab) {
         case 'study': return <StudyView course={selectedCourse} selectedUnit={selectedUnit} onUnitChange={setSelectedUnit} />;
+        case 'video': return <VideoView course={selectedCourse} />;
         case 'geography': return <GeographyView course={selectedCourse} />;
         case 'genealogy': return <GenealogyView course={selectedCourse} />;
         case 'flashcards': return <FlashcardsView course={selectedCourse} />;
@@ -225,11 +234,12 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white/40 dark:bg-black/20 backdrop-blur-md p-2 rounded-full border-2 border-altin/30 shadow-xl mb-10 sticky top-[72px] sm:top-[88px] z-40 overflow-x-auto no-scrollbar overflow-touch">
+        <div className="bg-white/40 dark:bg-black/20 backdrop-blur-md p-2 rounded-full border-2 border-altin/30 shadow-xl mb-10 sticky top-[110px] sm:top-[125px] z-40 overflow-x-auto no-scrollbar overflow-touch">
           <div className="flex min-w-max gap-1">
             {[
               { id: 'pdf', label: 'Kitap', icon: '📄' },
               { id: 'study', label: 'Hülasa', icon: '📜' },
+              { id: 'video', label: 'Video', icon: '📽️' },
               { id: 'geography', label: 'Harita', icon: '🌍' },
               { id: 'genealogy', label: 'Şecere', icon: '🌳' },
               { id: 'flashcards', label: 'Ezber', icon: '🗂️' },
@@ -291,6 +301,8 @@ const App: React.FC = () => {
           </div>
         </div>
       </nav>
+      {/* Haber Bandı Navigation'ın hemen altına eklendi */}
+      <NewsTicker /> 
       <main className="max-w-5xl mx-auto">{renderContent()}</main>
     </div>
   );
