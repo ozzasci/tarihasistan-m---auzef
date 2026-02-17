@@ -9,7 +9,7 @@ interface AIChatProps {
 
 const AIChat: React.FC<AIChatProps> = ({ course }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'model', text: `Merhaba! Ben ${course.name} ders asistanınım. Bu dersle ilgili takıldığın her şeyi bana sorabilirsin.` }
+    { role: 'model', text: `Merhaba! Ben ${course.name} ders asistanınım. Bu dersle ilgili takıldığın her şeyi bana sorabilirsin. Güncel akademik haberleri de senin için araştırabilirim.` }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -36,7 +36,11 @@ const AIChat: React.FC<AIChatProps> = ({ course }) => {
       }));
       
       const response = await chatWithTutor(course.name, history);
-      setMessages(prev => [...prev, { role: 'model', text: response || "Üzgünüm, şu an cevap veremiyorum." }]);
+      setMessages(prev => [...prev, { 
+        role: 'model', 
+        text: response.text || "Üzgünüm, şu an cevap veremiyorum.",
+        groundingLinks: response.links
+      }]);
     } catch (error) {
       console.error("Chat hatası:", error);
       setMessages(prev => [...prev, { role: 'model', text: "Bir hata oluştu. Lütfen tekrar deneyin." }]);
@@ -51,8 +55,8 @@ const AIChat: React.FC<AIChatProps> = ({ course }) => {
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 bg-blue-500 rounded-xl flex items-center justify-center text-lg shadow-lg">🤖</div>
           <div>
-            <div className="text-sm font-bold">Tarih Asistanı</div>
-            <div className="text-[10px] text-blue-300 uppercase tracking-widest font-black">CANLI | {course.name}</div>
+            <div className="text-sm font-bold">Tarih Asistanı (Müşavir)</div>
+            <div className="text-[10px] text-blue-300 uppercase tracking-widest font-black">CANLI | GOOGLE SEARCH ENTEGRELİ</div>
           </div>
         </div>
       </div>
@@ -60,12 +64,31 @@ const AIChat: React.FC<AIChatProps> = ({ course }) => {
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth bg-slate-50/50 dark:bg-slate-900/50 no-scrollbar overflow-touch">
         {messages.map((msg, idx) => (
           <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
-            <div className={`max-w-[90%] sm:max-w-[80%] p-3.5 rounded-2xl shadow-sm text-sm leading-relaxed ${
+            <div className={`max-w-[90%] sm:max-w-[80%] p-4 rounded-2xl shadow-sm text-sm leading-relaxed ${
               msg.role === 'user' 
                 ? 'bg-blue-600 text-white rounded-tr-none' 
                 : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-tl-none'
             }`}>
-              {msg.text}
+              <div className="whitespace-pre-wrap">{msg.text}</div>
+              
+              {msg.groundingLinks && msg.groundingLinks.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 space-y-2">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Kaynaklar (Google Search):</p>
+                  <div className="flex flex-wrap gap-2">
+                    {msg.groundingLinks.map((link, lIdx) => (
+                      <a 
+                        key={lIdx} 
+                        href={link.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-indigo-100 dark:border-indigo-800 hover:brightness-110 transition-all"
+                      >
+                        🌐 {link.title}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ))}
@@ -86,7 +109,7 @@ const AIChat: React.FC<AIChatProps> = ({ course }) => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-          placeholder="Tarihi bir soru sor..."
+          placeholder="Tarihi bir soru sor veya araştırma yap..."
           className="flex-1 bg-slate-100 dark:bg-slate-800 border-none rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-blue-500 transition-all outline-none dark:text-white"
         />
         <button

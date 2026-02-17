@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { getAllPDFs } from '../services/dbService';
+import { getAllPDFs, deleteAllPDFs } from '../services/dbService';
 
 interface SettingsViewProps {
   onBack: () => void;
@@ -13,19 +13,32 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack, theme, onToggleThem
   const [storageSize, setStorageSize] = useState('0 MB');
 
   useEffect(() => {
-    const calcStorage = async () => {
-      const pdfs = await getAllPDFs();
-      let total = 0;
-      pdfs.forEach(p => total += p.blob.size);
-      setStorageSize((total / (1024 * 1024)).toFixed(1) + ' MB');
-    };
     calcStorage();
   }, []);
+
+  const calcStorage = async () => {
+    const pdfs = await getAllPDFs();
+    let total = 0;
+    pdfs.forEach(p => total += p.blob.size);
+    setStorageSize((total / (1024 * 1024)).toFixed(1) + ' MB');
+  };
 
   const handleClearData = () => {
     if (window.confirm("Tüm ders ilerlemeleriniz ve notlarınız silinecektir. Bu işlem geri alınamaz. Emin misiniz?")) {
       localStorage.clear();
       window.location.reload();
+    }
+  };
+
+  const handleClearLibrary = async () => {
+    if (window.confirm("Kütüphanenizdeki tüm çevrimdışı kitaplar (PDF dosyaları) silinecektir. Devam etmek istiyor musunuz?")) {
+      try {
+        await deleteAllPDFs();
+        setStorageSize('0 MB');
+        alert("Kütüphane başarıyla temizlendi.");
+      } catch (error) {
+        alert("Silme işlemi sırasında bir hata oluştu.");
+      }
     }
   };
 
@@ -82,12 +95,20 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack, theme, onToggleThem
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Çevrimdışı Kitaplar</span>
                 <span className="text-sm font-mono font-black text-indigo-600">{storageSize}</span>
              </div>
-             <button 
-              onClick={handleClearData}
-              className="w-full py-4 text-xs font-black uppercase tracking-widest text-rose-500 bg-rose-50 dark:bg-rose-950/20 rounded-2xl hover:bg-rose-500 hover:text-white transition-all"
-             >
-               ⚠️ Tüm Verileri Sıfırla
-             </button>
+             <div className="space-y-3">
+               <button 
+                onClick={handleClearLibrary}
+                className="w-full py-4 text-xs font-black uppercase tracking-widest text-amber-600 bg-amber-50 dark:bg-amber-950/20 rounded-2xl hover:bg-amber-600 hover:text-white transition-all"
+               >
+                 📂 Kitaplığı Temizle
+               </button>
+               <button 
+                onClick={handleClearData}
+                className="w-full py-4 text-xs font-black uppercase tracking-widest text-rose-500 bg-rose-50 dark:bg-rose-950/20 rounded-2xl hover:bg-rose-500 hover:text-white transition-all"
+               >
+                 ⚠️ Tüm Verileri Sıfırla
+               </button>
+             </div>
           </div>
         </div>
 

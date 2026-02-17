@@ -21,17 +21,19 @@ import ProfileView from './components/ProfileView';
 import SettingsView from './components/SettingsView';
 import CommunityView from './components/CommunityView';
 import WeeklyPlanner from './components/WeeklyPlanner';
-import { getCurrentUser } from './services/dbService';
+import { getCurrentUser, checkUnitExists } from './services/dbService';
 
 type ViewState = 'home' | 'course' | 'library' | 'achievements' | 'comparison' | 'profile' | 'settings' | 'community' | 'planner';
-type TabState = 'study' | 'quiz' | 'chat' | 'pdf' | 'interview' | 'glossary' | 'flashcards' | 'genealogy' | 'geography';
+type TabState = 'pdf' | 'study' | 'quiz' | 'chat' | 'interview' | 'glossary' | 'flashcards' | 'genealogy' | 'geography';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-  const [activeTab, setActiveTab] = useState<TabState>('study');
+  const [selectedUnit, setSelectedUnit] = useState(1);
+  const [activeTab, setActiveTab] = useState<TabState>('pdf');
   const [currentView, setCurrentView] = useState<ViewState>('home');
   const [isAppLoading, setIsAppLoading] = useState(true);
+  const [hasPdf, setHasPdf] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     return localStorage.getItem('theme') as 'light' | 'dark' || 'light';
   });
@@ -55,12 +57,26 @@ const App: React.FC = () => {
 
   const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
 
-  const handleCourseSelect = (course: Course) => {
+  const handleCourseSelect = async (course: Course) => {
     setSelectedCourse(course);
-    setActiveTab('study');
+    setSelectedUnit(1);
+    const exists = await checkUnitExists(course.id, 1);
+    setHasPdf(exists);
+    setActiveTab('pdf');
     setCurrentView('course');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  const checkPdfStatus = async () => {
+    if (selectedCourse) {
+      const exists = await checkUnitExists(selectedCourse.id, selectedUnit);
+      setHasPdf(exists);
+    }
+  };
+
+  useEffect(() => {
+    checkPdfStatus();
+  }, [selectedUnit, selectedCourse]);
 
   if (isAppLoading) return null;
 
@@ -147,26 +163,43 @@ const App: React.FC = () => {
               <CourseCard key={course.id} course={course} onClick={handleCourseSelect} />
             ))}
           </div>
-
-          <div className="bg-hunkar dark:bg-orange-950/20 border-4 border-altin/50 rounded-[3rem] p-8 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl relative overflow-hidden">
-             <div className="absolute -left-10 -bottom-10 opacity-10 text-[180px] text-white">🖋️</div>
-             <div className="flex items-center gap-6 text-center md:text-left relative z-10">
-                <div className="text-5xl sm:text-6xl float-icon">📖</div>
-                <div>
-                  <h3 className="text-xl sm:text-2xl font-display font-bold text-altin drop-shadow-md">Sınav-ı Şerif Yaklaşıyor!</h3>
-                  <p className="text-orange-100 font-serif text-sm sm:text-base mt-1 opacity-80">Bahar Dönemi Ara Sınav: 26-27 Nisan 2025</p>
-                </div>
-             </div>
-             <button 
-              onClick={() => setCurrentView('planner')}
-              className="w-full md:w-auto bg-altin text-hunkar px-10 py-4 rounded-full font-display font-black text-sm tracking-widest shadow-xl active:scale-95 transition-all hover:brightness-110"
-             >
-               Hazırlan
-             </button>
-          </div>
         </div>
       );
     }
+
+    const renderTabContent = () => {
+      if (activeTab === 'pdf') return <PDFView course={selectedCourse} selectedUnit={selectedUnit} onUnitChange={setSelectedUnit} onUploadSuccess={checkPdfStatus} />;
+      
+      if (!hasPdf) {
+        return (
+          <div className="py-20 flex flex-col items-center justify-center text-center animate-in fade-in duration-500">
+            <div className="w-24 h-24 bg-hunkar/10 text-hunkar rounded-full flex items-center justify-center text-5xl mb-6 border-4 border-hunkar/20 border-dashed">🔒</div>
+            <h3 className="text-2xl font-display font-bold text-hunkar dark:text-altin uppercase tracking-widest mb-4">Mütalaa Kilitli</h3>
+            <p className="text-slate-600 dark:text-orange-50/60 font-serif italic max-w-md mx-auto mb-8">
+              "İlim, kaynağından öğrenilir." Müverrih Oğuz, {selectedUnit}. fasıl için henüz bir ferman hıfzetmemişsin. Lütfen önce PDF'i yükle.
+            </p>
+            <button 
+              onClick={() => setActiveTab('pdf')}
+              className="bg-hunkar text-altin px-10 py-4 rounded-full font-display font-black text-sm tracking-widest shadow-xl hover:brightness-110 transition-all"
+            >
+              FASLI YÜKLE 📄
+            </button>
+          </div>
+        );
+      }
+
+      switch (activeTab) {
+        case 'study': return <StudyView course={selectedCourse} selectedUnit={selectedUnit} onUnitChange={setSelectedUnit} />;
+        case 'geography': return <GeographyView course={selectedCourse} />;
+        case 'genealogy': return <GenealogyView course={selectedCourse} />;
+        case 'flashcards': return <FlashcardsView course={selectedCourse} />;
+        case 'quiz': return <QuizView course={selectedCourse} />;
+        case 'chat': return <AIChat course={selectedCourse} />;
+        case 'interview': return <CharacterInterview course={selectedCourse} />;
+        case 'glossary': return <GlossaryView />;
+        default: return null;
+      }
+    };
 
     return (
       <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6 animate-in fade-in duration-300 pb-24 sm:pb-32 pb-safe">
@@ -188,19 +221,19 @@ const App: React.FC = () => {
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-3xl sm:text-4xl font-display font-bold text-hunkar dark:text-altin leading-tight truncate">{selectedCourse.name}</h1>
-            <p className="text-enderun dark:text-orange-200/60 font-serif italic text-sm sm:text-base">AUZEF Ders-i Saadet | 3. Sınıf</p>
+            <p className="text-enderun dark:text-orange-200/60 font-serif italic text-sm sm:text-base">AUZEF Ders-i Saadet | {selectedUnit}. Ünite</p>
           </div>
         </div>
 
         <div className="bg-white/40 dark:bg-black/20 backdrop-blur-md p-2 rounded-full border-2 border-altin/30 shadow-xl mb-10 sticky top-[72px] sm:top-[88px] z-40 overflow-x-auto no-scrollbar overflow-touch">
           <div className="flex min-w-max gap-1">
             {[
+              { id: 'pdf', label: 'Kitap', icon: '📄' },
               { id: 'study', label: 'Hülasa', icon: '📜' },
               { id: 'geography', label: 'Harita', icon: '🌍' },
               { id: 'genealogy', label: 'Şecere', icon: '🌳' },
               { id: 'flashcards', label: 'Ezber', icon: '🗂️' },
               { id: 'interview', label: 'Mülakat', icon: '👤' },
-              { id: 'pdf', label: 'Kitap', icon: '📄' },
               { id: 'quiz', label: 'İmtihan', icon: '📝' },
               { id: 'chat', label: 'Müşavir', icon: '🤖' },
               { id: 'glossary', label: 'Lügat', icon: '📖' }
@@ -210,26 +243,18 @@ const App: React.FC = () => {
                 id={`tab-${tab.id}`}
                 onClick={() => {
                     setActiveTab(tab.id as TabState);
-                    document.getElementById(`tab-${tab.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                 }}
                 className={`px-5 sm:px-6 py-3 rounded-full font-display font-bold text-[10px] sm:text-[11px] tracking-widest transition-all whitespace-nowrap flex items-center gap-2 ${activeTab === tab.id ? 'bg-hunkar text-white shadow-xl scale-105 border border-altin z-10' : 'text-hunkar dark:text-altin hover:bg-white/50'}`}
               >
-                <span>{tab.icon}</span> {tab.label}
+                <span>{tab.icon}</span> 
+                <span>{tab.label}</span>
               </button>
             ))}
           </div>
         </div>
 
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-          {activeTab === 'study' && <StudyView course={selectedCourse} />}
-          {activeTab === 'geography' && <GeographyView course={selectedCourse} />}
-          {activeTab === 'genealogy' && <GenealogyView course={selectedCourse} />}
-          {activeTab === 'flashcards' && <FlashcardsView course={selectedCourse} />}
-          {activeTab === 'pdf' && <PDFView course={selectedCourse} />}
-          {activeTab === 'quiz' && <QuizView course={selectedCourse} />}
-          {activeTab === 'chat' && <AIChat course={selectedCourse} />}
-          {activeTab === 'interview' && <CharacterInterview course={selectedCourse} />}
-          {activeTab === 'glossary' && <GlossaryView />}
+          {renderTabContent()}
         </div>
       </div>
     );
@@ -244,7 +269,6 @@ const App: React.FC = () => {
             <button 
               onClick={() => setCurrentView('settings')}
               className="w-10 h-10 rounded-full border-2 border-altin/30 flex items-center justify-center text-lg hover:bg-altin/10 transition-all active:scale-90"
-              title="Ayarlar"
             >
               ⚙️
             </button>

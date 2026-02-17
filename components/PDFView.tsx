@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Course } from '../types';
-import { savePDF, getPDF } from '../services/dbService';
+import { saveUnitPDF, getUnitPDF, getAllPDFKeys } from '../services/dbService';
 
 declare const pdfjsLib: any;
 
@@ -12,11 +12,15 @@ interface SearchResult {
 
 interface PDFViewProps {
   course: Course;
+  selectedUnit: number;
+  onUnitChange: (unit: number) => void;
+  onUploadSuccess?: () => void;
 }
 
-const PDFView: React.FC<PDFViewProps> = ({ course }) => {
+const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, onUploadSuccess }) => {
   const [localPdfUrl, setLocalPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [uploadedKeys, setUploadedKeys] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -24,45 +28,54 @@ const PDFView: React.FC<PDFViewProps> = ({ course }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const embedRef = useRef<HTMLEmbedElement>(null);
 
+  const units = Array.from({ length: 14 }, (_, i) => ({
+    number: i + 1,
+    title: i === 0 ? "1. Fasıl (Mebde)" : `${i + 1}. Fasıl`,
+  }));
+
+  const refreshPDFStatus = async () => {
+    const keys = await getAllPDFKeys();
+    setUploadedKeys(keys);
+  };
+
   useEffect(() => {
     if (typeof pdfjsLib !== 'undefined') {
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     }
+    loadUnit(selectedUnit);
+    refreshPDFStatus();
+  }, [course.id, selectedUnit]);
 
-    const loadStoredPdf = async () => {
-      setLoading(true);
-      try {
-        const blob = await getPDF(course.id);
-        if (blob) {
-          const pdfBlob = new Blob([blob], { type: 'application/pdf' });
-          setLocalPdfUrl(URL.createObjectURL(pdfBlob));
-        }
-      } catch (error) {
-        console.error("PDF yüklenirken hata:", error);
-      } finally {
-        setLoading(false);
+  const loadUnit = async (unitNum: number) => {
+    setLoading(true);
+    setLocalPdfUrl(null);
+    try {
+      const blob = await getUnitPDF(course.id, unitNum);
+      if (blob) {
+        const url = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+        setLocalPdfUrl(url);
       }
-    };
-    
-    loadStoredPdf();
-  }, [course.id]);
+    } catch (error) {
+      console.error("Fasıl yüklenirken hata:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type === 'application/pdf') {
-      await savePDF(course.id, file);
-      const url = URL.createObjectURL(file);
-      setLocalPdfUrl(url);
-      setSearchResults([]);
+      await saveUnitPDF(course.id, selectedUnit, file);
+      loadUnit(selectedUnit);
+      refreshPDFStatus();
+      if (onUploadSuccess) onUploadSuccess();
     }
   };
 
   const handleSearch = async () => {
     if (!searchQuery.trim() || !localPdfUrl) return;
-    
     setIsSearching(true);
     setSearchResults([]);
-    
     try {
       const loadingTask = pdfjsLib.getDocument(localPdfUrl);
       const pdf = await loadingTask.promise;
@@ -96,104 +109,82 @@ const PDFView: React.FC<PDFViewProps> = ({ course }) => {
     }
   };
 
-  const finalPdfUrl = localPdfUrl ? `${localPdfUrl}#page=${currentPage}` : null;
-
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] shadow-xl border border-slate-100 dark:border-slate-800">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
-          <div>
-            <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white">Dijital Kitaplık</h2>
-            <div className="flex items-center gap-2 mt-1">
-               <span className={`w-2 h-2 rounded-full ${localPdfUrl ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
-               <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                 {localPdfUrl ? 'Çevrimdışı Kullanılabilir' : 'Bulut Modu / Yüklenmedi'}
-               </span>
-            </div>
-          </div>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full sm:w-auto bg-slate-900 dark:bg-indigo-600 text-white px-8 py-3 rounded-2xl font-bold text-sm hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-lg"
-          >
-            <span>📥</span> {localPdfUrl ? 'Kitabı Güncelle' : 'Kitap Yükle'}
-          </button>
-          <input type="file" accept=".pdf" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
+    <div className="flex flex-col lg:flex-row gap-8 animate-in fade-in duration-500">
+      <div className="w-full lg:w-72 shrink-0 space-y-4">
+        <div className="bg-hunkar p-6 rounded-[2rem] border-2 border-altin shadow-xl">
+           <h3 className="text-altin font-display font-bold text-lg mb-4 flex items-center gap-2">
+             <span>📜</span> MECLİS-İ FİHRİST
+           </h3>
+           <div className="grid grid-cols-4 lg:grid-cols-2 gap-2 max-h-[400px] overflow-y-auto no-scrollbar">
+              {units.map((u) => {
+                const isUploaded = uploadedKeys.includes(`${course.id}_unit_${u.number}`);
+                return (
+                  <button
+                    key={u.number}
+                    onClick={() => onUnitChange(u.number)}
+                    className={`p-3 rounded-xl font-display font-bold text-[10px] tracking-widest transition-all border-2 flex flex-col items-center justify-center gap-1 ${
+                      selectedUnit === u.number 
+                        ? 'bg-altin text-hunkar border-white' 
+                        : isUploaded 
+                          ? 'bg-white/10 text-white border-white/20 hover:bg-white/20' 
+                          : 'bg-black/20 text-white/40 border-transparent opacity-60'
+                    }`}
+                  >
+                    <span className="text-xs">{u.number}</span>
+                    <span className="opacity-60">{u.number === 1 ? 'MEBDE' : isUploaded ? 'HIFZ' : 'BOŞ'}</span>
+                  </button>
+                );
+              })}
+           </div>
         </div>
+      </div>
 
-        {localPdfUrl && (
-          <div className="flex gap-2 mb-6">
-            <input 
-              type="text" 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              placeholder="Kitap içinde ara (Örn: Savaşlar)..."
-              className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-6 py-4 text-sm outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-indigo-500 transition-all dark:text-white"
-            />
-            <button 
-              onClick={handleSearch}
-              disabled={isSearching || !searchQuery.trim()}
-              className="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-bold text-sm disabled:opacity-50 shadow-lg active:scale-95 transition-all"
+      <div className="flex-1 space-y-6">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] shadow-xl border border-slate-100 dark:border-slate-800">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white">{selectedUnit}. Fasıl (Ünite)</h2>
+              <div className="flex items-center gap-2 mt-1">
+                 <span className={`w-2 h-2 rounded-full ${localPdfUrl ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
+                 <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                   {localPdfUrl ? 'Çevrimdışı Mahzende' : 'Yüklenmemiş'}
+                 </span>
+              </div>
+            </div>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full sm:w-auto bg-hunkar text-altin border-2 border-altin px-8 py-3 rounded-2xl font-display font-bold text-xs hover:brightness-110 transition-all flex items-center justify-center gap-2 shadow-lg"
             >
-              {isSearching ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : "Bul"}
+              <span>📥</span> {localPdfUrl ? 'Faslı Güncelle' : 'Fasıl Yükle'}
             </button>
+            <input type="file" accept=".pdf" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
           </div>
-        )}
 
-        {searchResults.length > 0 && (
-          <div className="mb-8 bg-slate-50 dark:bg-slate-950 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 max-h-64 overflow-y-auto space-y-3 shadow-inner">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Bulunan Sonuçlar ({searchResults.length})</p>
-            {searchResults.map((res, i) => (
-              <button 
-                key={i} 
-                onClick={() => jumpToPage(res.page)}
-                className="w-full text-left p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-indigo-300 transition-all flex items-center gap-4"
-              >
-                <div className="bg-slate-900 dark:bg-indigo-900 text-white text-[10px] px-3 py-1.5 rounded-lg font-bold">Sayfa {res.page}</div>
-                <p className="text-xs text-slate-600 dark:text-slate-400 italic line-clamp-1">{res.text}</p>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {finalPdfUrl ? (
-          <div className="aspect-[3/4] md:aspect-[16/10] w-full border-4 border-slate-50 dark:border-slate-800 rounded-[2rem] overflow-hidden bg-slate-200 dark:bg-slate-950 shadow-2xl relative">
-             <embed ref={embedRef} src={finalPdfUrl} type="application/pdf" className="w-full h-full" />
-             <div className="absolute bottom-6 right-6 flex gap-3">
-                <a href={localPdfUrl!} target="_blank" rel="noreferrer" className="bg-white/90 dark:bg-slate-900/90 backdrop-blur px-6 py-3 rounded-xl font-bold text-sm shadow-xl hover:bg-white transition-all dark:text-white">Tam Ekran ↗</a>
-             </div>
-          </div>
-        ) : (
-          <div className="py-16 border-4 border-dashed border-slate-100 dark:border-slate-800 rounded-[3rem] flex flex-col items-center justify-center text-center bg-slate-50/50 dark:bg-slate-900/50 p-8">
-            <div className="text-7xl mb-6 grayscale opacity-30">📂</div>
-            <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300">Bu Dersin Kitabı Yüklenmemiş</h3>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mt-3 max-w-sm mx-auto mb-8">
-              Ders kitabını bir kez yüklersen, internetin olmasa bile istediğin zaman okuyabilirsin.
-            </p>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-lg">
-              <a 
-                href={course.pdfUrl} 
-                target="_blank" 
-                rel="noreferrer"
-                className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-300 p-6 rounded-3xl border border-indigo-100 dark:border-indigo-900/50 text-left hover:scale-[1.02] transition-transform group"
-              >
-                <div className="text-2xl mb-2">🌍</div>
-                <div className="font-bold text-sm mb-1">Resmi Kaynaktan İndir</div>
-                <div className="text-[10px] opacity-70">AUZEF portalından PDF'i aç ve cihazına kaydet.</div>
-              </a>
-              
+          {loading ? (
+            <div className="aspect-[16/10] w-full flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-950 rounded-[2rem]">
+               <div className="w-12 h-12 border-4 border-hunkar border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : localPdfUrl ? (
+            <div className="aspect-[3/4] md:aspect-[16/10] w-full border-4 border-slate-50 dark:border-slate-800 rounded-[2rem] overflow-hidden bg-slate-200 dark:bg-slate-950 shadow-2xl relative">
+               <embed ref={embedRef} src={`${localPdfUrl}#page=${currentPage}`} type="application/pdf" className="w-full h-full" />
+            </div>
+          ) : (
+            <div className="py-20 border-4 border-dashed border-slate-100 dark:border-slate-800 rounded-[3rem] flex flex-col items-center justify-center text-center bg-slate-50/50 dark:bg-slate-900/50 p-8">
+              <div className="text-7xl mb-6 grayscale opacity-30">📜</div>
+              <h3 className="text-xl font-display font-bold text-hunkar dark:text-altin uppercase">Başlangıç İçin Faslı Hıfzedin</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-sm mt-3 max-w-sm mx-auto mb-8 font-serif">
+                {selectedUnit}. Ünite kitabını hıfzederek internetsiz mütalaa etmeye başlayabilirsiniz.
+              </p>
               <button 
                 onClick={() => fileInputRef.current?.click()}
-                className="bg-slate-900 dark:bg-slate-800 text-white p-6 rounded-3xl text-left hover:scale-[1.02] transition-transform"
+                className="bg-hunkar text-altin px-10 py-4 rounded-full font-display font-black text-xs tracking-widest shadow-xl hover:brightness-110 transition-all border-2 border-altin"
               >
-                <div className="text-2xl mb-2">📥</div>
-                <div className="font-bold text-sm mb-1">Cihazdan Yükle</div>
-                <div className="text-[10px] opacity-70">İndirdiğin PDF'i seçerek çevrimdışı belleğe ekle.</div>
+                HEMEN YÜKLE 📥
               </button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

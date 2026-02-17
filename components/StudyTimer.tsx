@@ -1,10 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
+import { addStudyTime } from '../services/dbService';
 
 const StudyTimer: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [isActive, setIsActive] = useState(false);
   const [mode, setMode] = useState<'study' | 'break'>('study');
+  const [initialTime] = useState(25 * 60);
 
   useEffect(() => {
     let interval: any = null;
@@ -14,9 +16,16 @@ const StudyTimer: React.FC = () => {
       }, 1000);
     } else if (timeLeft === 0) {
       setIsActive(false);
+      
+      // Çalışma süresi bittiyse istatistiklere ekle
+      if (mode === 'study') {
+        const minutesEarned = Math.floor(initialTime / 60);
+        addStudyTime(minutesEarned);
+      }
+
       const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
       audio.play().catch(() => {});
-      alert(mode === 'study' ? "Çalışma süresi bitti! Mola ver." : "Mola bitti! Haydi derse.");
+      alert(mode === 'study' ? "Çalışma süresi bitti! Mola ver. Nişanların için dakikalar hanene eklendi." : "Mola bitti! Haydi derse.");
       handleReset();
     }
     return () => clearInterval(interval);

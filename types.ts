@@ -8,6 +8,13 @@ export enum CourseId {
   ALTINORDA = 'altinorda-tarihi'
 }
 
+export interface Unit {
+  number: number;
+  title: string;
+  isUploaded: boolean;
+  isCompleted: boolean;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -20,7 +27,7 @@ export interface User {
 
 export interface DayAvailability {
   day: string;
-  slots: string[]; // ["18:00", "20:00"] gibi
+  slots: string[];
 }
 
 export interface StudySession {
@@ -37,42 +44,13 @@ export interface WeeklyPlan {
   advice: string;
 }
 
-export interface SharedResource {
-  id: string;
-  title: string;
-  type: 'pdf' | 'link' | 'note';
-  courseId: CourseId;
-  url: string;
-  senderName: string;
-  senderId: string;
-  date: number;
-  description: string;
-}
-
-export interface DirectMessage {
-  id: string;
-  fromId: string;
-  fromName: string;
-  toId: string;
-  content: string;
-  attachmentUrl?: string;
-  date: number;
-  isRead: boolean;
-}
-
-export interface RulerNode {
-  name: string;
-  period: string;
-  keyAction: string;
-  children?: RulerNode[];
-}
-
 export interface Achievement {
   id: string;
   title: string;
   description: string;
   icon: string;
-  requirement: string;
+  category: 'academic' | 'social' | 'archival' | 'course';
+  courseId?: CourseId;
   isUnlocked: boolean;
 }
 
@@ -85,6 +63,7 @@ export interface Course {
   pdfUrl?: string;
   progress?: number;
   featuredCharacter?: HistoryCharacter;
+  units?: Unit[]; // Her ders için ünite listesi
 }
 
 export interface HistoryCharacter {
@@ -107,6 +86,7 @@ export interface Flashcard {
 export interface ChatMessage {
   role: 'user' | 'model';
   text: string;
+  groundingLinks?: { title: string, url: string }[];
 }
 
 export interface QuizQuestion {
@@ -131,4 +111,32 @@ export interface ComparisonResult {
     entity2Info: string;
   }[];
   conclusion: string;
+}
+
+export interface RulerNode {
+  name: string;
+  period: string;
+  keyAction: string;
+}
+
+export interface SharedResource {
+  id: string;
+  title: string;
+  type: 'link' | 'pdf' | 'text';
+  courseId: CourseId;
+  url: string;
+  senderName: string;
+  senderId: string;
+  date: number;
+  description: string;
+}
+
+export interface DirectMessage {
+  id: string;
+  fromId: string;
+  fromName: string;
+  toId: string;
+  content: string;
+  date: number;
+  isRead: boolean;
 }
