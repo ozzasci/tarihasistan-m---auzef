@@ -92,7 +92,7 @@ const App: React.FC = () => {
     if (currentView === 'achievements') {
       return (
         <div className="animate-in fade-in duration-500 pb-safe">
-           <button onClick={() => setCurrentView('home')} className="p-4 sm:p-6 text-slate-500 dark:text-slate-400 font-bold hover:text-slate-900 dark:hover:text-white transition-colors">← Geri Dön</button>
+           <button onClick={() => setCurrentView('home')} className="p-4 sm:p-6 text-hunkar dark:text-altin font-display font-bold hover:opacity-80 transition-colors">← Geri Dön</button>
            <AchievementsView />
         </div>
       );
@@ -101,7 +101,7 @@ const App: React.FC = () => {
     if (currentView === 'comparison') {
       return (
         <div className="animate-in fade-in duration-500 pb-20 sm:pb-32 pb-safe">
-           <button onClick={() => setCurrentView('home')} className="p-6 sm:p-8 text-slate-500 dark:text-slate-400 font-bold hover:text-slate-900 dark:hover:text-white transition-colors">← Geri Dön</button>
+           <button onClick={() => setCurrentView('home')} className="p-6 sm:p-8 text-hunkar dark:text-altin font-display font-bold hover:opacity-80 transition-colors">← Geri Dön</button>
            <ComparisonView />
         </div>
       );
@@ -109,24 +109,29 @@ const App: React.FC = () => {
 
     if (currentView === 'home' || !selectedCourse) {
       return (
-        <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8 space-y-8 sm:space-y-10 pb-safe">
-          <div className="text-center relative">
-            <h1 className="text-3xl sm:text-4xl font-serif text-slate-900 dark:text-white mb-2 tracking-tight">TarihAsistanım</h1>
-            <p className="text-slate-500 dark:text-slate-400 font-medium text-sm sm:text-base px-4">Hoş geldin, {user.name.split(' ')[0]}! Bugün ne öğreniyoruz?</p>
+        <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8 space-y-8 sm:space-y-12 pb-safe">
+          <div className="text-center relative pt-10">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 opacity-10 pointer-events-none">
+                <svg width="200" height="200" viewBox="0 0 200 200" fill="currentColor" className="text-hunkar dark:text-altin">
+                    <path d="M100 0C100 0 80 40 40 40C40 40 0 60 0 100C0 140 40 160 40 160C40 160 80 200 100 200C100 200 120 160 160 160C160 160 200 140 200 100C200 60 160 40 160 40C160 40 120 0 100 0Z" />
+                </svg>
+            </div>
+            <h1 className="text-4xl sm:text-6xl font-display text-hunkar dark:text-altin mb-2 tracking-widest drop-shadow-sm uppercase">Vakanüvis</h1>
+            <p className="text-enderun dark:text-orange-200/60 font-serif italic text-base sm:text-lg px-4">Safa geldiniz, {user.name.split(' ')[0]}. Tedrisatınıza nereden devam edelim?</p>
             
-            <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mt-6 sm:mt-8">
+            <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mt-10 sm:mt-12">
               {[
-                { id: 'planner', icon: '📅', label: 'Planım', color: 'text-amber-600' },
-                { id: 'library', icon: '📚', label: 'Kütüphane', color: 'text-indigo-600' },
-                { id: 'community', icon: '👥', label: 'Topluluk', color: 'text-blue-600' },
-                { id: 'comparison', icon: '⚖️', label: 'Analiz', color: 'text-rose-600' }
+                { id: 'planner', icon: '📜', label: 'Haftalık Program', color: 'border-hunkar text-hunkar' },
+                { id: 'library', icon: '🏛️', label: 'Beytü\'l-Hikme', color: 'border-enderun text-enderun' },
+                { id: 'community', icon: '🤝', label: 'Meclis-i İrfan', color: 'border-selcuk text-selcuk' },
+                { id: 'comparison', icon: '⚖️', label: 'Vaka-i Mütalaa', color: 'border-amber-700 text-amber-700' }
               ].map(item => (
                 <button 
                   key={item.id}
                   onClick={() => setCurrentView(item.id as ViewState)}
-                  className={`inline-flex items-center gap-2 sm:gap-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 sm:px-6 py-3 rounded-2xl shadow-sm ${item.color} dark:text-white font-bold hover:border-indigo-200 dark:hover:border-slate-600 transition-all active:scale-95 group flex-1 min-w-[140px] justify-center text-sm`}
+                  className={`inline-flex items-center gap-2 sm:gap-3 bg-white/50 dark:bg-black/20 border-2 ${item.color} dark:border-altin/40 dark:text-altin px-5 sm:px-8 py-4 rounded-full shadow-md font-display font-bold hover:bg-white dark:hover:bg-black/40 transition-all active:scale-95 group flex-1 min-w-[160px] justify-center text-xs tracking-widest`}
                 >
-                  <span className="text-lg group-hover:rotate-12 transition-transform">{item.icon}</span> 
+                  <span className="text-xl group-hover:scale-125 transition-transform">{item.icon}</span> 
                   {item.label}
                 </button>
               ))}
@@ -137,25 +142,26 @@ const App: React.FC = () => {
              <StudyTimer />
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 animate-in fade-in slide-in-from-bottom-6 duration-700">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 animate-in fade-in slide-in-from-bottom-6 duration-1000">
             {COURSES.map(course => (
               <CourseCard key={course.id} course={course} onClick={handleCourseSelect} />
             ))}
           </div>
 
-          <div className="bg-amber-100 dark:bg-amber-950/40 border-2 border-amber-200 dark:border-amber-900 rounded-[2.5rem] p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl shadow-amber-50 dark:shadow-none">
-             <div className="flex items-center gap-4 sm:gap-6 text-center md:text-left">
-                <div className="text-4xl sm:text-5xl">📅</div>
+          <div className="bg-hunkar dark:bg-orange-950/20 border-4 border-altin/50 rounded-[3rem] p-8 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl relative overflow-hidden">
+             <div className="absolute -left-10 -bottom-10 opacity-10 text-[180px] text-white">🖋️</div>
+             <div className="flex items-center gap-6 text-center md:text-left relative z-10">
+                <div className="text-5xl sm:text-6xl float-icon">📖</div>
                 <div>
-                  <h3 className="text-lg sm:text-xl font-bold text-amber-900 dark:text-amber-200 font-serif">Sınavlar Yaklaşıyor!</h3>
-                  <p className="text-amber-800 dark:text-amber-400 text-xs sm:text-sm opacity-80">Vize Haftası: 26-27 Nisan 2025</p>
+                  <h3 className="text-xl sm:text-2xl font-display font-bold text-altin drop-shadow-md">Sınav-ı Şerif Yaklaşıyor!</h3>
+                  <p className="text-orange-100 font-serif text-sm sm:text-base mt-1 opacity-80">Bahar Dönemi Ara Sınav: 26-27 Nisan 2025</p>
                 </div>
              </div>
              <button 
               onClick={() => setCurrentView('planner')}
-              className="w-full md:w-auto bg-amber-900 dark:bg-amber-600 text-white px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-amber-200 active:scale-95 transition-all"
+              className="w-full md:w-auto bg-altin text-hunkar px-10 py-4 rounded-full font-display font-black text-sm tracking-widest shadow-xl active:scale-95 transition-all hover:brightness-110"
              >
-               Planla
+               Hazırlan
              </button>
           </div>
         </div>
@@ -164,10 +170,10 @@ const App: React.FC = () => {
 
     return (
       <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6 animate-in fade-in duration-300 pb-24 sm:pb-32 pb-safe">
-        <div className="flex items-center justify-between mb-6 sm:mb-8">
+        <div className="flex items-center justify-between mb-8">
           <button 
             onClick={() => setCurrentView('home')}
-            className="flex items-center gap-2 text-slate-400 dark:text-slate-500 font-bold hover:text-slate-900 dark:hover:text-white transition-all group p-2"
+            className="flex items-center gap-2 text-hunkar dark:text-altin font-display font-bold hover:opacity-70 transition-all group p-2"
           >
             <span className="group-hover:-translate-x-1 transition-transform">←</span> Geri
           </button>
@@ -176,28 +182,28 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-4 sm:gap-6 mb-6 sm:mb-10">
-          <div className={`${selectedCourse.color} w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl flex items-center justify-center text-3xl sm:text-4xl shadow-2xl border-2 sm:border-4 border-white dark:border-slate-800`}>
+        <div className="flex items-center gap-6 mb-10">
+          <div className={`bg-hunkar w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-4xl sm:text-5xl shadow-2xl border-4 border-altin`}>
             {selectedCourse.icon}
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 dark:text-white leading-tight truncate">{selectedCourse.name}</h1>
-            <p className="text-slate-500 dark:text-slate-400 font-medium text-xs sm:text-sm">AUZEF Lisans Programı | 3. Sınıf</p>
+            <h1 className="text-3xl sm:text-4xl font-display font-bold text-hunkar dark:text-altin leading-tight truncate">{selectedCourse.name}</h1>
+            <p className="text-enderun dark:text-orange-200/60 font-serif italic text-sm sm:text-base">AUZEF Ders-i Saadet | 3. Sınıf</p>
           </div>
         </div>
 
-        <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-1.5 rounded-[1.5rem] sm:rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-xl mb-8 sm:mb-10 sticky top-[72px] sm:top-[88px] z-40 overflow-x-auto no-scrollbar overflow-touch">
+        <div className="bg-white/40 dark:bg-black/20 backdrop-blur-md p-2 rounded-full border-2 border-altin/30 shadow-xl mb-10 sticky top-[72px] sm:top-[88px] z-40 overflow-x-auto no-scrollbar overflow-touch">
           <div className="flex min-w-max gap-1">
             {[
-              { id: 'study', label: 'Özet', icon: '📚' },
+              { id: 'study', label: 'Hülasa', icon: '📜' },
               { id: 'geography', label: 'Harita', icon: '🌍' },
-              { id: 'genealogy', label: 'Soy Ağacı', icon: '🌳' },
+              { id: 'genealogy', label: 'Şecere', icon: '🌳' },
               { id: 'flashcards', label: 'Ezber', icon: '🗂️' },
-              { id: 'interview', label: 'Röportaj', icon: '👤' },
-              { id: 'pdf', label: 'PDF Kitap', icon: '📄' },
-              { id: 'quiz', label: 'Sınav', icon: '📝' },
-              { id: 'chat', label: 'Chat', icon: '🤖' },
-              { id: 'glossary', label: 'Sözlük', icon: '📖' }
+              { id: 'interview', label: 'Mülakat', icon: '👤' },
+              { id: 'pdf', label: 'Kitap', icon: '📄' },
+              { id: 'quiz', label: 'İmtihan', icon: '📝' },
+              { id: 'chat', label: 'Müşavir', icon: '🤖' },
+              { id: 'glossary', label: 'Lügat', icon: '📖' }
             ].map((tab) => (
               <button 
                 key={tab.id}
@@ -206,7 +212,7 @@ const App: React.FC = () => {
                     setActiveTab(tab.id as TabState);
                     document.getElementById(`tab-${tab.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                 }}
-                className={`px-4 sm:px-5 py-3 sm:py-3.5 rounded-xl sm:rounded-2xl font-black text-[10px] sm:text-[11px] transition-all whitespace-nowrap flex items-center gap-2 ${activeTab === tab.id ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xl scale-105 z-10' : 'text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                className={`px-5 sm:px-6 py-3 rounded-full font-display font-bold text-[10px] sm:text-[11px] tracking-widest transition-all whitespace-nowrap flex items-center gap-2 ${activeTab === tab.id ? 'bg-hunkar text-white shadow-xl scale-105 border border-altin z-10' : 'text-hunkar dark:text-altin hover:bg-white/50'}`}
               >
                 <span>{tab.icon}</span> {tab.label}
               </button>
@@ -214,7 +220,7 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
           {activeTab === 'study' && <StudyView course={selectedCourse} />}
           {activeTab === 'geography' && <GeographyView course={selectedCourse} />}
           {activeTab === 'genealogy' && <GenealogyView course={selectedCourse} />}
@@ -230,27 +236,27 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen pb-12 bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
-      <nav className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 py-3 sm:py-5 px-4 sm:px-8 sticky top-0 z-50 shadow-sm pt-safe">
+    <div className="min-h-screen pb-12 transition-colors duration-500">
+      <nav className="bg-white/60 dark:bg-black/40 backdrop-blur-lg border-b-4 border-altin py-4 sm:py-6 px-4 sm:px-8 sticky top-0 z-50 shadow-lg pt-safe">
         <div className="flex items-center justify-between max-w-5xl mx-auto h-12">
-          <span className="font-serif text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">TarihAsistanım</span>
-          <div className="flex items-center gap-2 sm:gap-3">
+          <span className="font-display text-2xl sm:text-3xl font-black text-hunkar dark:text-altin tracking-widest">VAKANÜVİS</span>
+          <div className="flex items-center gap-3">
             <button 
               onClick={() => setCurrentView('settings')}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-lg hover:bg-slate-200 transition-all active:scale-90"
+              className="w-10 h-10 rounded-full border-2 border-altin/30 flex items-center justify-center text-lg hover:bg-altin/10 transition-all active:scale-90"
               title="Ayarlar"
             >
               ⚙️
             </button>
             <button 
               onClick={toggleTheme}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-lg hover:bg-slate-200 transition-all active:scale-90"
+              className="w-10 h-10 rounded-full border-2 border-altin/30 flex items-center justify-center text-lg hover:bg-altin/10 transition-all active:scale-90"
             >
               {theme === 'light' ? '🌙' : '☀️'}
             </button>
             <button 
               onClick={() => setCurrentView('profile')}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center text-sm font-bold shadow-lg active:scale-90 transition-all overflow-hidden"
+              className="w-10 h-10 rounded-full bg-hunkar text-altin flex items-center justify-center text-sm font-bold shadow-lg active:scale-90 transition-all overflow-hidden border-2 border-altin"
             >
               {user.avatarUrl ? (
                 <img src={user.avatarUrl} alt="P" className="w-full h-full object-cover" />

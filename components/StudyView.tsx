@@ -123,46 +123,42 @@ const StudyView: React.FC<StudyViewProps> = ({ course }) => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-24 pb-safe">
-        <div className="w-14 h-14 border-4 border-slate-900 dark:border-white border-t-transparent rounded-full animate-spin"></div>
-        <p className="mt-6 text-slate-500 dark:text-slate-400 font-serif italic animate-pulse text-lg">Arşivler taranıyor...</p>
+        <div className="w-16 h-16 border-4 border-altin border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-6 text-hunkar dark:text-altin font-display tracking-widest animate-pulse text-lg">TOZLU RAFLAR ARALANIYOR...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-safe">
-      <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-slate-800 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 dark:bg-slate-800 rounded-bl-full -z-0 opacity-50"></div>
+    <div className="space-y-8 sm:space-y-12 animate-in fade-in slide-in-from-bottom-6 duration-1000 pb-safe">
+      <div className="bg-white/90 dark:bg-black/40 p-8 sm:p-12 rounded-[3rem] shadow-2xl border-x-8 border-altin/20 relative overflow-hidden rumi-border">
+        <div className="absolute top-0 left-0 w-full h-4 bg-altin/50"></div>
         
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8 relative z-10">
-          <h2 className="text-2xl sm:text-3xl font-serif text-slate-900 dark:text-white leading-tight pr-0 sm:pr-4">{summary?.title}</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10 relative z-10">
+          <div className="flex-1">
+             <h2 className="text-3xl sm:text-4xl font-display text-hunkar dark:text-altin leading-tight mb-2 tracking-wide uppercase drop-shadow-sm">{summary?.title}</h2>
+             <div className="w-24 h-1 bg-altin"></div>
+          </div>
           <button 
             onClick={handleListen}
-            className={`w-full sm:w-16 h-14 sm:h-16 rounded-2xl flex items-center justify-center shadow-2xl transition-all active:scale-95 ${isPlaying ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'}`}
+            className={`w-full sm:w-20 h-16 sm:h-20 rounded-full flex items-center justify-center shadow-2xl transition-all active:scale-95 border-4 ${isPlaying ? 'bg-red-700 border-white animate-pulse text-white' : 'bg-altin border-hunkar text-hunkar'}`}
           >
             {isPlaying ? (
-              <span className="flex items-center gap-2 font-bold text-xs uppercase sm:hidden">Durdur <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg></span>
+              <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
             ) : (
-              <span className="flex items-center gap-2 font-bold text-xs uppercase sm:hidden">Sesli Dinle <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>
+              <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
             )}
-            <span className="hidden sm:block">
-               {isPlaying ? (
-                <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-              ) : (
-                <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-              )}
-            </span>
           </button>
         </div>
         
-        <div className="prose prose-slate dark:prose-invert max-w-none text-slate-700 dark:text-slate-300 leading-relaxed text-base sm:text-lg font-normal mb-8 relative z-10">
+        <div className="prose prose-slate dark:prose-invert max-w-none text-slate-800 dark:text-orange-50/80 leading-relaxed text-lg sm:text-xl font-serif italic mb-10 relative z-10 drop-shadow-sm">
           {summary?.content}
         </div>
 
         {mapData?.chunks && mapData.chunks.length > 0 && (
-          <div className="mt-8 pt-8 border-t border-slate-100 dark:border-slate-800">
-            <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Önemli Konumlar</h4>
-            <div className="flex flex-wrap gap-2 sm:gap-3">
+          <div className="mt-12 pt-10 border-t-2 border-altin/30">
+            <h4 className="text-xs font-display font-black text-hunkar dark:text-altin uppercase tracking-[0.4em] mb-6">Mekan-ı Vakalar</h4>
+            <div className="flex flex-wrap gap-3 sm:gap-4">
               {mapData.chunks.map((chunk: any, i: number) => (
                 chunk.maps && (
                   <a 
@@ -170,9 +166,9 @@ const StudyView: React.FC<StudyViewProps> = ({ course }) => {
                     href={chunk.maps.uri} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-indigo-100 transition-colors border border-indigo-100 dark:border-indigo-900 shadow-sm"
+                    className="flex items-center gap-3 bg-white/60 dark:bg-black/40 text-hunkar dark:text-altin px-6 py-3.5 rounded-full text-sm font-display font-bold hover:brightness-110 transition-all border-2 border-altin shadow-lg"
                   >
-                    📍 {chunk.maps.title || "Haritada Gör"}
+                    📍 {chunk.maps.title || "Harita"}
                   </a>
                 )
               ))}
@@ -181,51 +177,54 @@ const StudyView: React.FC<StudyViewProps> = ({ course }) => {
         )}
       </div>
 
-      <div className="bg-slate-900 dark:bg-slate-950 p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl text-white">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg sm:text-xl font-serif flex items-center gap-3">
-            <span className="text-xl sm:text-2xl">✍️</span> Notlarım
+      <div className="bg-hunkar dark:bg-orange-950/40 p-8 sm:p-10 rounded-[3rem] shadow-2xl text-white border-4 border-altin/40">
+        <div className="flex items-center justify-between mb-8">
+          <h3 className="text-xl sm:text-2xl font-display font-bold flex items-center gap-4 text-altin">
+            <span className="text-3xl">🖋️</span> Tahrir Defterim
           </h3>
           <button 
             onClick={handleNoteSave}
             disabled={isSavingNote}
-            className={`px-4 sm:px-6 py-2 rounded-xl text-xs font-bold transition-all ${isSavingNote ? 'bg-emerald-500' : 'bg-blue-600 hover:bg-blue-500 active:scale-95'}`}
+            className={`px-8 py-3 rounded-full text-xs font-display font-black tracking-widest transition-all ${isSavingNote ? 'bg-enderun text-white' : 'bg-altin text-hunkar hover:brightness-110 active:scale-95'}`}
           >
-            {isSavingNote ? "Kaydedildi" : "Kaydet"}
+            {isSavingNote ? "KAYDEDİLDİ" : "KAYDET"}
           </button>
         </div>
         <textarea 
           value={userNote}
           onChange={(e) => setUserNote(e.target.value)}
-          placeholder="Dersle ilgili notlarını buraya yaz..."
-          className="w-full h-32 sm:h-40 bg-slate-800/50 dark:bg-slate-900/50 border-none rounded-2xl p-4 sm:p-6 text-slate-200 placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 outline-none resize-none text-sm leading-relaxed"
+          placeholder="Mütalaalarınızı buraya tahrir ediniz..."
+          className="w-full h-40 sm:h-52 bg-black/20 border-2 border-altin/20 rounded-[2rem] p-6 sm:p-8 text-orange-50 placeholder:text-orange-100/30 focus:ring-4 focus:ring-altin/30 outline-none resize-none text-lg font-serif italic leading-relaxed"
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-        <div className="bg-[#FAF7F2] dark:bg-slate-900/40 p-6 sm:p-8 rounded-[2rem] border border-[#EBE3D5] dark:border-slate-800 shadow-sm">
-          <h3 className="font-serif text-xl sm:text-2xl text-[#5D4037] dark:text-amber-500 mb-6 flex items-center gap-3">
-            <span className="text-2xl sm:text-3xl">📜</span> Kronoloji
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-10">
+        <div className="bg-white/80 dark:bg-black/20 p-8 sm:p-10 rounded-[3rem] border-2 border-altin shadow-xl">
+          <h3 className="font-display text-2xl sm:text-3xl text-hunkar dark:text-altin mb-8 flex items-center gap-4 border-b-2 border-altin/30 pb-4">
+            <span className="text-3xl sm:text-4xl">📜</span> Takvim-i Vekayi
           </h3>
-          <div className="space-y-4 sm:space-y-6">
+          <div className="space-y-6">
             {summary?.keyDates.map((item, idx) => (
-              <div key={idx} className="flex gap-4 items-start group">
-                <div className="bg-[#5D4037] dark:bg-amber-600 text-white text-[9px] sm:text-[10px] px-2 sm:px-3 py-1 rounded-full font-bold mt-1 shrink-0">{item.date}</div>
-                <div className="text-slate-700 dark:text-slate-300 text-xs sm:text-sm leading-relaxed font-medium">{item.event}</div>
+              <div key={idx} className="flex gap-5 items-start group">
+                <div className="bg-hunkar text-altin text-[10px] sm:text-[11px] px-4 py-1.5 rounded-full font-display font-black mt-1 shrink-0 border border-altin/30 shadow-md">{item.date}</div>
+                <div className="text-slate-800 dark:text-orange-50/80 text-sm sm:text-base leading-relaxed font-serif italic">{item.event}</div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="bg-[#F0F4F8] dark:bg-slate-900/40 p-6 sm:p-8 rounded-[2rem] border border-[#D1E1F0] dark:border-slate-800 shadow-sm">
-          <h3 className="font-serif text-xl sm:text-2xl text-[#2C3E50] dark:text-indigo-400 mb-6 flex items-center gap-3">
-            <span className="text-2xl sm:text-3xl">🎖️</span> Önemli Kişiler
+        <div className="bg-white/80 dark:bg-black/20 p-8 sm:p-10 rounded-[3rem] border-2 border-altin shadow-xl">
+          <h3 className="font-display text-2xl sm:text-3xl text-hunkar dark:text-altin mb-8 flex items-center gap-4 border-b-2 border-altin/30 pb-4">
+            <span className="text-3xl sm:text-4xl">🎖️</span> Rical-i Devlet
           </h3>
-          <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 gap-4">
             {summary?.importantFigures.map((item, idx) => (
-              <div key={idx} className="bg-white/80 dark:bg-slate-800/40 p-4 rounded-2xl border border-white dark:border-slate-700 shadow-sm">
-                <div className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">{item.name}</div>
-                <div className="text-blue-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-wider mt-1">{item.role}</div>
+              <div key={idx} className="bg-parshmen dark:bg-black/40 p-5 rounded-3xl border border-altin/20 shadow-sm flex items-center gap-4">
+                <div className="w-12 h-12 bg-hunkar rounded-full flex items-center justify-center text-xl border-2 border-altin shrink-0">👤</div>
+                <div>
+                    <div className="font-display font-bold text-hunkar dark:text-altin text-base sm:text-lg">{item.name}</div>
+                    <div className="text-enderun dark:text-orange-200/60 text-[10px] font-display font-bold uppercase tracking-[0.2em] mt-1">{item.role}</div>
+                </div>
               </div>
             ))}
           </div>
