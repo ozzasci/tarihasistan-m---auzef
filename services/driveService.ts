@@ -1,8 +1,8 @@
 
 /**
- * Oğuz'un sağladığı Client ID sisteme entegre edildi.
+ * Oğuz'un sağladığı güncel Client ID sisteme entegre edildi.
  */
-let MASTER_CLIENT_ID = "809678519144-a3d4og3opsict9836fpgff9herq3jbf1.apps.googleusercontent.com"; 
+let MASTER_CLIENT_ID = "809678519144-4dpd0scel97i3p0rg9msi8ie9gteav3p.apps.googleusercontent.com"; 
 
 export const getStoredClientId = () => {
   return localStorage.getItem('google_client_id') || MASTER_CLIENT_ID;

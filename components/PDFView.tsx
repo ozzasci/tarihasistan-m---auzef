@@ -94,13 +94,13 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
     } catch (error: any) {
       console.error("Drive hatası:", error);
       if (error.message === "INVALID_CLIENT") {
-        setConfigError("ID HATASI: Client ID yanlış veya site adresi (Origin) Google'a eklenmemiş.");
+        setConfigError("ID HATASI: Client ID'yi yanlış kopyalamış olabilirsiniz veya henüz 'Authorized JavaScript origins' kaydı Google'da aktifleşmedi.");
         setShowConfig(true);
       } else if (error.message === "AUTH_CANCELED") {
-        setConfigError("Giriş işlemi iptal edildi veya 'Test Kullanıcısı' olarak eklenmediniz.");
+        setConfigError("ERİŞİM ENGELİ: Google bu uygulamayı henüz doğrulamadı. 'Test Users' kısmına mailinizi eklemeniz şarttır.");
         setShowConfig(true);
       } else {
-        setConfigError("ERİŞİM ENGELİ: Google sizi tanımadı. Lütfen 'Test Kullanıcıları' listesine e-postanızı ekleyin.");
+        setConfigError("BEKLENMEDİK HATA: Google bağlantısı kurulamadı. Rehberi takip edin.");
         setShowConfig(true);
       }
     } finally {
@@ -264,26 +264,27 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
                      <div>
                        <h4 className="font-display font-bold text-slate-800 dark:text-white text-lg">Erişim Yetkisi Bekleniyor</h4>
                        <p className="text-sm text-slate-500 dark:text-slate-400 font-serif mt-2 max-w-sm">
-                         Google doğrulama hatası alıyorsanız kendinizi <b>'Test Kullanıcısı'</b> olarak eklemeniz şarttır.
+                         Google "Erişim Engellendi" diyorsa <b>'Test Users'</b> eklemediniz demektir. Bu bölümü bulmak zordur, aşağıdaki butona basın.
                        </p>
-                       <button onClick={() => setShowGuide(true)} className="text-[10px] text-indigo-500 underline uppercase font-black tracking-widest mt-4 inline-block">ÇÖZÜM REHBERİ (OKUYUN)</button>
+                       <button onClick={() => setShowGuide(true)} className="text-[11px] text-indigo-500 underline uppercase font-black tracking-widest mt-4 bg-indigo-50 px-4 py-2 rounded-xl">"TEST USERS" NEREDE? (RESİMLİ TARİF)</button>
                      </div>
                      <div className="w-full max-w-sm space-y-3">
                        <input 
                         type="text" 
                         value={tempClientId}
                         onChange={(e) => setTempClientId(e.target.value)}
-                        placeholder="OAuth 2.0 Client ID yapıştırın..."
+                        placeholder="OAuth 2.0 Client ID..."
                         className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-4 text-xs font-mono outline-none focus:border-indigo-500 transition-all dark:text-white shadow-inner"
                        />
                        {configError && (
-                        <div className="bg-rose-50 dark:bg-rose-950/30 text-rose-600 p-4 rounded-2xl text-[10px] font-bold text-left border border-rose-200 space-y-3 shadow-lg">
-                           <p className="flex items-center gap-2"><span>⚠️</span> {configError}</p>
-                           <div className="bg-white/50 p-3 rounded-xl space-y-2">
-                             <p className="text-rose-700 font-black uppercase text-[9px]">KESİN ÇÖZÜM:</p>
-                             <p className="font-normal text-[10px]">1. Google Cloud'da <b>'OAuth Consent Screen'</b>e gidin.</p>
-                             <p className="font-normal text-[10px]">2. <b>'Test Users'</b> kısmına kendi mailinizi ekleyin.</p>
-                             <p className="font-normal text-[10px]">3. Sayfayı yenileyip tekrar deneyin.</p>
+                        <div className="bg-rose-50 dark:bg-rose-950/30 text-rose-600 p-5 rounded-3xl text-[10px] font-bold text-left border border-rose-200 shadow-lg">
+                           <p className="flex items-center gap-2 mb-2"><span>⚠️</span> {configError}</p>
+                           <div className="bg-white/50 p-4 rounded-2xl space-y-3">
+                             <p className="text-rose-700 font-black uppercase text-[9px] border-b border-rose-200 pb-1">BU ADRESİ KAYDETTİNİZ Mİ?</p>
+                             <div className="flex gap-2">
+                               <code className="bg-slate-100 dark:bg-black/20 p-2 rounded flex-1 break-all text-[9px]">{window.location.origin}</code>
+                               <button onClick={() => { navigator.clipboard.writeText(window.location.origin); alert("Adres kopyalandı!"); }} className="bg-rose-600 text-white px-3 rounded-lg text-[8px]">KOPYALA</button>
+                             </div>
                            </div>
                         </div>
                        )}
@@ -296,20 +297,29 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
                  ) : (
                    <div className="w-full text-left space-y-6 animate-in slide-in-from-right-4">
                       <div className="bg-indigo-50 dark:bg-slate-800 p-6 rounded-[2rem] border border-indigo-100 dark:border-slate-700">
-                        <h5 className="font-display font-black text-indigo-700 dark:text-indigo-400 text-xs uppercase mb-4">"Google Doğrulamadı" Hatası Çözümü:</h5>
-                        <ul className="text-xs space-y-4 font-serif italic text-slate-600 dark:text-slate-300">
-                          <li className="bg-amber-100 dark:bg-amber-900/30 p-3 rounded-xl border border-amber-200">
-                             <b>KRİTİK ADIM:</b> Google Console'da <a href="https://console.cloud.google.com/apis/credentials/consent" target="_blank" className="text-indigo-600 underline font-bold">BU SAYFAYA GİDİN</a> ve sayfanın en altındaki <b>"Test Users"</b> kısmına kendi e-postanızı ekleyin.
+                        <h5 className="font-display font-black text-indigo-700 dark:text-indigo-400 text-xs uppercase mb-4">"TEST USERS" BÖLÜMÜNÜ BULMA REHBERİ:</h5>
+                        <ul className="text-xs space-y-5 font-serif italic text-slate-600 dark:text-slate-300">
+                          <li className="flex gap-3">
+                             <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center shrink-0 font-bold not-italic">1</span>
+                             <span>Google Cloud Console'da soldaki menüden <b>"APIs & Services" > "OAuth consent screen"</b>e tıklayın.</span>
                           </li>
-                          <li><b>Adres Kaydı:</b> "Authorized JavaScript origins" kısmına aşağıdaki adresi birebir ekleyin:</li>
+                          <li className="flex gap-3">
+                             <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center shrink-0 font-bold not-italic">2</span>
+                             <span>Eğer sayfa boşsa, formdaki zorunlu yerleri (App Name, Emails) doldurup <b>"SAVE AND CONTINUE"</b> diyerek ilerleyin.</span>
+                          </li>
+                          <li className="flex gap-3">
+                             <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center shrink-0 font-bold not-italic">3</span>
+                             <span><b>3. ADIM (Test users)</b>'a ulaştığınızda <b>"+ ADD USERS"</b> butonuna basıp mailinizi ekleyin.</span>
+                          </li>
                           <li className="bg-white dark:bg-black/20 p-4 rounded-xl border-2 border-indigo-200 dark:border-indigo-900 not-italic space-y-3">
-                            <div className="flex gap-2">
-                              <code className="bg-slate-100 dark:bg-slate-800 px-3 py-2 rounded-lg text-indigo-600 font-bold flex-1 break-all text-[10px]">{window.location.origin}</code>
-                              <button onClick={() => { navigator.clipboard.writeText(window.location.origin); alert("Adres kopyalandı!"); }} className="bg-indigo-600 text-white px-3 rounded-lg text-[9px] font-bold">KOPYALA</button>
+                             <span className="text-rose-600 font-black uppercase text-[10px] block">EKLEYECEĞİNİZ E-POSTA:</span>
+                             <div className="flex gap-2">
+                              <code className="bg-slate-100 dark:bg-slate-800 px-3 py-2 rounded-lg text-indigo-600 font-bold flex-1 break-all text-[10px]">ozzasci@gmail.com</code>
+                              <button onClick={() => { navigator.clipboard.writeText("ozzasci@gmail.com"); alert("E-posta kopyalandı!"); }} className="bg-indigo-600 text-white px-3 rounded-lg text-[9px] font-bold uppercase">Kopyala</button>
                             </div>
                           </li>
                         </ul>
-                        <button onClick={() => setShowGuide(false)} className="mt-6 w-full py-3 bg-white dark:bg-slate-700 text-indigo-600 dark:text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-indigo-100 dark:border-slate-600">← Ayarlara Dön</button>
+                        <button onClick={() => setShowGuide(false)} className="mt-6 w-full py-4 bg-white dark:bg-slate-700 text-indigo-600 dark:text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-indigo-100 dark:border-slate-600 shadow-md">← Ayarlara Dön</button>
                       </div>
                    </div>
                  )}
