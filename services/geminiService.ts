@@ -4,9 +4,19 @@ import { StudySummary, QuizQuestion, Flashcard, RulerNode, ComparisonResult, Wee
 
 const getAI = () => {
   const apiKey = process.env.API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) {
+    console.error("HATA: API_KEY bulunamadı!");
+    return null;
+  }
   return new GoogleGenAI({ apiKey });
 };
+
+// Genel görevler için Gemini 3 Flash
+const DEFAULT_MODEL = "gemini-3-flash-preview";
+// Harita araçları için Gemini 2.5 Flash
+const MAPS_MODEL = "gemini-2.5-flash";
+// Ses üretimi için TTS modeli
+const TTS_MODEL = "gemini-2.5-flash-preview-tts";
 
 const handleAIError = (error: any) => {
   console.error("AI API Hatası:", error);
@@ -24,14 +34,13 @@ export const generateWeeklyPlan = async (studentName: string, courses: string[],
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: DEFAULT_MODEL,
       contents: `Öğrenci ${studentName} için şu dersleri içeren bir haftalık AUZEF Tarih çalışma programı hazırlamanı istiyorum: ${courses.join(', ')}. 
       
-      KRİTİK KISITLAMA: Öğrenci sadece şu gün ve saatlerde ders çalışabilir, programı SADECE bu saatlere yerleştir:
+      KRİTİK KISITLAMA: Öğrenci sadece şu gün ve saatlerde ders çalışabilir:
       ${availabilityString}
 
-      JSON formatında 'sessions' (day, time, courseName, topic, duration, type) ve genel bir 'advice' metni döndür. 
-      'type' şunlardan biri olmalı: 'review', 'focus', 'quiz'. Saatleri öğrencinin belirttiği listeden seç.`,
+      JSON formatında 'sessions' (day, time, courseName, topic, duration, type) ve genel bir 'advice' metni döndür.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -69,7 +78,7 @@ export const compareHistory = async (entity1: string, entity2: string): Promise<
   if (!ai) throw new Error("AI başlatılamadı");
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: DEFAULT_MODEL,
       contents: `"${entity1}" ve "${entity2}" yapılarını; askeri sistem, siyasi yapı, ekonomik temel ve kültürel miras açılarından karşılaştır.`,
       config: {
         responseMimeType: "application/json",
@@ -106,7 +115,7 @@ export const generateGenealogy = async (courseName: string): Promise<RulerNode[]
   if (!ai) throw new Error("AI başlatılamadı");
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: DEFAULT_MODEL,
       contents: `"${courseName}" dersi ile ilgili en önemli hükümdarların kronolojik soy ağacı yapısını hazırla.`,
       config: {
         responseMimeType: "application/json",
@@ -135,7 +144,7 @@ export const generateSummary = async (courseName: string): Promise<StudySummary>
   if (!ai) throw new Error("AI başlatılamadı");
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: DEFAULT_MODEL,
       contents: `AUZEF Tarih 3. Sınıf müfredatına uygun olarak "${courseName}" dersi için detaylı bir akademik özet hazırla.`,
       config: {
         responseMimeType: "application/json",
@@ -162,7 +171,7 @@ export const generateFlashcards = async (courseName: string): Promise<Flashcard[
   if (!ai) throw new Error("AI başlatılamadı");
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: DEFAULT_MODEL,
       contents: `"${courseName}" dersi için en önemli 10 kavram, olay veya tarih içeren ezber kartı (flashcard) hazırla.`,
       config: {
         responseMimeType: "application/json",
@@ -187,8 +196,8 @@ export const getHistoricalLocations = async (courseName: string, context: string
   if (!ai) return null;
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: `${courseName} dersindeki şu olayların geçtiği coğrafi konumları bul ve Google Maps bağlantılarıyla açıkla: ${context}`,
+      model: MAPS_MODEL,
+      contents: `${courseName} dersindeki şu olayların geçtiği coğrafi konumları bul ve açıkla: ${context}`,
       config: { tools: [{ googleMaps: {} }] }
     });
     return { text: response.text, chunks: response.candidates?.[0]?.groundingMetadata?.groundingChunks || [] };
@@ -197,24 +206,25 @@ export const getHistoricalLocations = async (courseName: string, context: string
   }
 };
 
-export const generateSpeech = async (text: string): Promise<ArrayBuffer> => {
+export const generateSpeech = async (text: string): Promise<string> => {
   const ai = getAI();
   if (!ai) throw new Error("AI başlatılamadı");
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-preview-tts",
+      model: TTS_MODEL,
       contents: [{ parts: [{ text: text }] }],
       config: {
         responseModalities: [Modality.AUDIO],
-        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: { voiceName: 'Kore' }
+          }
+        }
       },
     });
     const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
     if (!base64Audio) throw new Error("Ses verisi alınamadı");
-    const binaryString = atob(base64Audio);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-    return bytes.buffer;
+    return base64Audio;
   } catch (err) {
     return handleAIError(err);
   }
@@ -225,7 +235,7 @@ export const generateQuiz = async (courseName: string): Promise<QuizQuestion[]> 
   if (!ai) throw new Error("AI başlatılamadı");
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: DEFAULT_MODEL,
       contents: `AUZEF "${courseName}" dersi için 5 adet zorlayıcı çoktan seçmeli soru hazırla.`,
       config: {
         responseMimeType: "application/json",
@@ -250,7 +260,7 @@ export const chatWithTutor = async (courseName: string, history: any[]): Promise
   if (!ai) throw new Error("AI başlatılamadı");
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: DEFAULT_MODEL,
       contents: history,
       config: { systemInstruction: `Sen bir AUZEF Tarih Bölümü 3. sınıf asistanısın. Ders: ${courseName}.` }
     });
@@ -265,7 +275,7 @@ export const interviewCharacter = async (characterName: string, characterTitle: 
   if (!ai) throw new Error("AI başlatılamadı");
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: DEFAULT_MODEL,
       contents: history,
       config: {
         systemInstruction: `Sen ${characterName} isminde bir tarihi karaktersin.`

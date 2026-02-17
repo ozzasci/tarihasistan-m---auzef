@@ -37,27 +37,27 @@ const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] p-4 font-sans">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 font-sans pt-safe pb-safe">
       <div className="max-w-md w-full animate-in fade-in zoom-in-95 duration-500">
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-slate-900 text-white rounded-[2rem] text-4xl mb-6 shadow-2xl">🏛️</div>
-          <h1 className="text-4xl font-serif font-black text-slate-900 mb-2">TarihAsistanım</h1>
-          <p className="text-slate-500 font-medium">AUZEF Tarih Bölümü Çalışma Portalı</p>
+        <div className="text-center mb-8 sm:mb-10">
+          <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl sm:rounded-[2rem] text-3xl sm:text-4xl mb-4 sm:mb-6 shadow-2xl">🏛️</div>
+          <h1 className="text-3xl sm:text-4xl font-serif font-black text-slate-900 dark:text-white mb-2 tracking-tight">TarihAsistanım</h1>
+          <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">AUZEF Tarih Bölümü Çalışma Portalı</p>
         </div>
 
-        <div className="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-2xl border border-slate-100">
-          <div className="flex bg-slate-100 p-1.5 rounded-2xl mb-8">
+        <div className="bg-white dark:bg-slate-900 p-6 sm:p-10 rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800">
+          <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl sm:rounded-2xl mb-6 sm:mb-8">
             <button 
               onClick={() => setIsLogin(true)}
-              className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${isLogin ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}
+              className={`flex-1 py-3 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${isLogin ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400'}`}
             >
-              Giriş Yap
+              Giriş
             </button>
             <button 
               onClick={() => setIsLogin(false)}
-              className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${!isLogin ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}
+              className={`flex-1 py-3 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${!isLogin ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400'}`}
             >
-              Kayıt Ol
+              Kayıt
             </button>
           </div>
 
@@ -65,47 +65,47 @@ const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess }) => {
             {!isLogin && (
               <>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Ad Soyad</label>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 px-1">Ad Soyad</label>
                   <input 
                     required
                     type="text" 
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl sm:rounded-2xl px-5 py-3.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white"
                     placeholder="Adınız Soyadınız"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Öğrenci No (Opsiyonel)</label>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 px-1">Öğrenci No (Opsiyonel)</label>
                   <input 
                     type="text" 
                     value={studentNo}
                     onChange={(e) => setStudentNo(e.target.value)}
-                    className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl sm:rounded-2xl px-5 py-3.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white"
                     placeholder="230..."
                   />
                 </div>
               </>
             )}
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">E-Posta Adresi</label>
+              <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 px-1">E-Posta</label>
               <input 
                 required
                 type="email" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl sm:rounded-2xl px-5 py-3.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white"
                 placeholder="ornek@mail.com"
               />
             </div>
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Şifre</label>
+              <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 px-1">Şifre</label>
               <input 
                 required
                 type="password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl sm:rounded-2xl px-5 py-3.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white"
                 placeholder="••••••••"
               />
             </div>
@@ -119,15 +119,15 @@ const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess }) => {
             <button 
               disabled={loading}
               type="submit"
-              className="w-full bg-slate-900 text-white py-5 rounded-[1.5rem] font-black text-sm shadow-xl shadow-slate-200 active:scale-95 transition-all disabled:opacity-50 mt-4"
+              className="w-full bg-slate-900 dark:bg-indigo-600 text-white py-4 sm:py-5 rounded-xl sm:rounded-[1.5rem] font-black text-sm shadow-xl active:scale-95 transition-all disabled:opacity-50 mt-4"
             >
-              {loading ? "İşlem yapılıyor..." : (isLogin ? "Giriş Yap →" : "Kayıt Ol →")}
+              {loading ? "Bekleyin..." : (isLogin ? "Giriş Yap →" : "Kayıt Ol →")}
             </button>
           </form>
         </div>
 
-        <p className="text-center text-slate-400 text-xs mt-10 leading-relaxed max-w-[280px] mx-auto">
-          Tüm verileriniz tarayıcınızın güvenli belleğinde saklanır ve asla dışarı aktarılmaz.
+        <p className="text-center text-slate-400 dark:text-slate-500 text-[10px] mt-8 leading-relaxed max-w-[240px] mx-auto uppercase tracking-wider font-bold">
+          Verileriniz tarayıcı belleğinde güvenle saklanır.
         </p>
       </div>
     </div>
