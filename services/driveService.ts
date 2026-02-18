@@ -80,17 +80,19 @@ export const searchAuzefFiles = async (searchTerm: string = 'auzef'): Promise<Dr
         tokenClient.callback = (resp: any) => {
           if (resp.error !== undefined) {
             // Google'dan gelen spesifik hataları yakala
-            if (resp.error === 'invalid_client' || resp.details?.includes('OAuth client was not found')) {
+            if (resp.error === 'access_denied') {
+              reject(new Error("ACCESS_DENIED")); // Test kullanıcısı değil veya izin vermedi
+            } else if (resp.error === 'invalid_client' || resp.details?.includes('OAuth client was not found')) {
               reject(new Error("INVALID_CLIENT"));
             }
-            reject(resp);
+            reject(new Error(resp.error));
           }
           resolve(resp);
         };
         tokenClient.requestAccessToken({ prompt: 'consent' });
       });
     } catch (err: any) {
-      if (err.message === "INVALID_CLIENT") throw err;
+      if (err.message === "INVALID_CLIENT" || err.message === "ACCESS_DENIED") throw err;
       throw new Error("AUTH_CANCELED");
     }
   }

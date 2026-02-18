@@ -34,7 +34,7 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
   const [isDriveSearching, setIsDriveSearching] = useState(false);
   const [tempClientId, setTempClientId] = useState(getStoredClientId());
   const [showConfig, setShowConfig] = useState(!isDriveConfigured());
-  const [configError, setConfigError] = useState<string | null>(null);
+  const [configError, setConfigError] = useState<{title: string, msg: string} | null>(null);
   const [showGuide, setShowGuide] = useState(false);
   const [driveSearchTerm, setDriveSearchTerm] = useState('auzef');
 
@@ -94,14 +94,27 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
     } catch (error: any) {
       console.error("Drive hatası:", error);
       if (error.message === "INVALID_CLIENT") {
-        setConfigError("ID HATASI: Client ID'yi yanlış kopyalamış olabilirsiniz veya henüz 'Authorized JavaScript origins' kaydı Google'da aktifleşmedi.");
+        setConfigError({
+          title: "İD HATASI",
+          msg: "Client ID'yi yanlış kopyalamış olabilirsiniz veya Google henüz onaylamadı."
+        });
+        setShowConfig(true);
+      } else if (error.message === "ACCESS_DENIED") {
+        setConfigError({
+          title: "İZİN FERMANI EKSİK",
+          msg: "Bâb-ı Google'dan erişim izni alınamadı. Bu uygulamanın 'Test Kullanıcısı' listesinde olmayabilirsiniz veya Google henüz doğrulamamış olabilir."
+        });
         setShowConfig(true);
       } else if (error.message === "AUTH_CANCELED") {
-        setConfigError("ERİŞİM ENGELİ: Google bu uygulamayı henüz doğrulamadı. 'Test Users' kısmına mailinizi eklemeniz şarttır.");
-        setShowConfig(true);
+        setConfigError({
+          title: "GİRİŞ İPTAL EDİLDİ",
+          msg: "Hesap seçimi veya izin verme işlemi yarıda kesildi."
+        });
       } else {
-        setConfigError("BEKLENMEDİK HATA: Google bağlantısı kurulamadı. Rehberi takip edin.");
-        setShowConfig(true);
+        setConfigError({
+          title: "BEKLENMEDİK HATA",
+          msg: "Google bağlantısı kurulamadı. Lütfen internetinizi kontrol edin."
+        });
       }
     } finally {
       setIsDriveSearching(false);
@@ -112,7 +125,7 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
     setConfigError(null);
     const cleanedId = tempClientId.trim();
     if (!cleanedId) {
-      setConfigError("Lütfen bir Client ID giriniz.");
+      setConfigError({title: "EKSİK BİLGİ", msg: "Lütfen bir Client ID giriniz."});
       return;
     }
     setStoredClientId(cleanedId);
@@ -264,9 +277,9 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
                      <div>
                        <h4 className="font-display font-bold text-slate-800 dark:text-white text-lg">Erişim Yetkisi Bekleniyor</h4>
                        <p className="text-sm text-slate-500 dark:text-slate-400 font-serif mt-2 max-w-sm">
-                         Google "Erişim Engellendi" diyorsa <b>'Test Users'</b> eklemediniz demektir. Bu bölümü bulmak zordur, aşağıdaki butona basın.
+                         Eğer yeni bir kullanıcıysanız ve hata alıyorsanız, uygulamanın yöneticisi (Oğuz) tarafından <b>'Test Users'</b> listesine eklenmeniz veya uygulamanın yayına alınması gerekir.
                        </p>
-                       <button onClick={() => setShowGuide(true)} className="text-[11px] text-indigo-500 underline uppercase font-black tracking-widest mt-4 bg-indigo-50 px-4 py-2 rounded-xl">"TEST USERS" NEREDE? (RESİMLİ TARİF)</button>
+                       <button onClick={() => setShowGuide(true)} className="text-[11px] text-indigo-500 underline uppercase font-black tracking-widest mt-4 bg-indigo-50 px-4 py-2 rounded-xl">"YENİ KULLANICI HATASI" ÇÖZÜMÜ →</button>
                      </div>
                      <div className="w-full max-w-sm space-y-3">
                        <input 
@@ -278,13 +291,10 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
                        />
                        {configError && (
                         <div className="bg-rose-50 dark:bg-rose-950/30 text-rose-600 p-5 rounded-3xl text-[10px] font-bold text-left border border-rose-200 shadow-lg">
-                           <p className="flex items-center gap-2 mb-2"><span>⚠️</span> {configError}</p>
-                           <div className="bg-white/50 p-4 rounded-2xl space-y-3">
-                             <p className="text-rose-700 font-black uppercase text-[9px] border-b border-rose-200 pb-1">BU ADRESİ KAYDETTİNİZ Mİ?</p>
-                             <div className="flex gap-2">
-                               <code className="bg-slate-100 dark:bg-black/20 p-2 rounded flex-1 break-all text-[9px]">{window.location.origin}</code>
-                               <button onClick={() => { navigator.clipboard.writeText(window.location.origin); alert("Adres kopyalandı!"); }} className="bg-rose-600 text-white px-3 rounded-lg text-[8px]">KOPYALA</button>
-                             </div>
+                           <p className="flex items-center gap-2 mb-2"><span>⚠️</span> <b>{configError.title}:</b> {configError.msg}</p>
+                           <div className="bg-white/50 p-4 rounded-2xl space-y-3 mt-2">
+                             <p className="text-rose-700 font-black uppercase text-[9px] border-b border-rose-200 pb-1">ÇÖZÜM REHBERİ:</p>
+                             <p className="text-[9px] text-slate-600 font-serif italic">1. Oğuz Cloud Console'dan sizi eklemeli.<br/>2. Veya uygulama 'Public' moda geçirilmeli.</p>
                            </div>
                         </div>
                        )}
@@ -297,26 +307,23 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
                  ) : (
                    <div className="w-full text-left space-y-6 animate-in slide-in-from-right-4">
                       <div className="bg-indigo-50 dark:bg-slate-800 p-6 rounded-[2rem] border border-indigo-100 dark:border-slate-700">
-                        <h5 className="font-display font-black text-indigo-700 dark:text-indigo-400 text-xs uppercase mb-4">"TEST USERS" BÖLÜMÜNÜ BULMA REHBERİ:</h5>
+                        <h5 className="font-display font-black text-indigo-700 dark:text-indigo-400 text-xs uppercase mb-4">DİĞER KULLANICILARIN ERİŞİMİ İÇİN (OĞUZ'A NOT):</h5>
                         <ul className="text-xs space-y-5 font-serif italic text-slate-600 dark:text-slate-300">
                           <li className="flex gap-3">
                              <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center shrink-0 font-bold not-italic">1</span>
-                             <span>Google Cloud Console'da soldaki menüden <b>"APIs & Services" > "OAuth consent screen"</b>e tıklayın.</span>
+                             <span>Google Cloud Console > OAuth Consent Screen sayfasına gidin.</span>
                           </li>
                           <li className="flex gap-3">
                              <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center shrink-0 font-bold not-italic">2</span>
-                             <span>Eğer sayfa boşsa, formdaki zorunlu yerleri (App Name, Emails) doldurup <b>"SAVE AND CONTINUE"</b> diyerek ilerleyin.</span>
+                             <span><b>'PUBLISH APP'</b> butonuna basın. Bu sayede manuel mail eklemenize gerek kalmadan herkes girebilir.</span>
                           </li>
                           <li className="flex gap-3">
                              <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center shrink-0 font-bold not-italic">3</span>
-                             <span><b>3. ADIM (Test users)</b>'a ulaştığınızda <b>"+ ADD USERS"</b> butonuna basıp mailinizi ekleyin.</span>
+                             <span>Uygulama onaylanana kadar kullanıcılar <b>"Advanced > Go to site (unsafe)"</b> diyerek girmelidir.</span>
                           </li>
                           <li className="bg-white dark:bg-black/20 p-4 rounded-xl border-2 border-indigo-200 dark:border-indigo-900 not-italic space-y-3">
-                             <span className="text-rose-600 font-black uppercase text-[10px] block">EKLEYECEĞİNİZ E-POSTA:</span>
-                             <div className="flex gap-2">
-                              <code className="bg-slate-100 dark:bg-slate-800 px-3 py-2 rounded-lg text-indigo-600 font-bold flex-1 break-all text-[10px]">ozzasci@gmail.com</code>
-                              <button onClick={() => { navigator.clipboard.writeText("ozzasci@gmail.com"); alert("E-posta kopyalandı!"); }} className="bg-indigo-600 text-white px-3 rounded-lg text-[9px] font-bold uppercase">Kopyala</button>
-                            </div>
+                             <span className="text-indigo-700 font-black uppercase text-[10px] block">ALTERNATİF:</span>
+                             <p className="text-[10px] text-slate-500 font-serif italic">Sadece arkadaşınız girecekse 'Test Users' listesine onun Gmail adresini eklemeniz yeterlidir.</p>
                           </li>
                         </ul>
                         <button onClick={() => setShowGuide(false)} className="mt-6 w-full py-4 bg-white dark:bg-slate-700 text-indigo-600 dark:text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-indigo-100 dark:border-slate-600 shadow-md">← Ayarlara Dön</button>
