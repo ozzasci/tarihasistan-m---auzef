@@ -1,6 +1,6 @@
 
 /**
- * VAKANÜVİS v3.0 - Drive Entegrasyonu
+ * VAKANÜVİS v3.1 - Drive Entegrasyonu (Hata Onarılmış Sürüm)
  * Müellif: Oğuz Bulut & AI Asistanı
  */
 
@@ -16,17 +16,22 @@ export interface DriveFile {
 
 let tokenClient: any = null;
 let accessToken: string | null = null;
+let isInitializing: Promise<void> | null = null;
 
 /**
- * API ve Google Identity Services'ı başlatır
+ * API ve Google Identity Services'ı başlatır. 
+ * Birden fazla kez çağrılsa bile tek bir başlatma süreci yürütür.
  */
 export const initDriveApi = (): Promise<void> => {
-  return new Promise((resolve, reject) => {
+  if (isInitializing) return isInitializing;
+
+  isInitializing = new Promise((resolve, reject) => {
     const gapi = (window as any).gapi;
     const google = (window as any).google;
 
     if (!gapi || !google) {
-      return reject(new Error("Google kütüphaneleri (gapi/gsi) yüklenemedi. İnternet bağlantınızı kontrol edin."));
+      isInitializing = null;
+      return reject(new Error("Google kütüphaneleri yüklenemedi. Sayfayı yenileyip tekrar deneyin."));
     }
 
     gapi.load('client', async () => {
@@ -39,21 +44,35 @@ export const initDriveApi = (): Promise<void> => {
         tokenClient = google.accounts.oauth2.initTokenClient({
           client_id: CLIENT_ID,
           scope: SCOPES,
-          callback: '', // callback sonra set edilecek
+          callback: '', 
         });
         
         resolve();
       } catch (err) {
+        isInitializing = null;
         reject(err);
       }
     });
   });
+
+  return isInitializing;
 };
 
 /**
- * Kullanıcıdan izin alır ve dosyaları listeler
+ * Kullanıcıdan izin alır ve dosyaları listeler.
+ * Güvenli: Eğer API hazır değilse önce init yapar.
  */
 export const searchAuzefFiles = async (searchTerm: string = ''): Promise<DriveFile[]> => {
+  // 0. Emniyet Kilidi: Eğer tokenClient yoksa başlat
+  if (!tokenClient) {
+    await initDriveApi();
+  }
+
+  // Hala yoksa (başlatma başarısızsa) hata fırlat
+  if (!tokenClient) {
+    throw new Error("Google yetkilendirme sistemi hazır değil. Lütfen birkaç saniye bekleyip tekrar deneyin.");
+  }
+
   const gapi = (window as any).gapi;
 
   // 1. Token Kontrolü ve Yetkilendirme
@@ -61,7 +80,10 @@ export const searchAuzefFiles = async (searchTerm: string = ''): Promise<DriveFi
     accessToken = await new Promise((resolve, reject) => {
       try {
         tokenClient.callback = (resp: any) => {
-          if (resp.error) return reject(resp);
+          if (resp.error) {
+            accessToken = null;
+            return reject(new Error(resp.error_description || resp.error));
+          }
           resolve(resp.access_token);
         };
         tokenClient.requestAccessToken({ prompt: 'consent' });
@@ -73,7 +95,8 @@ export const searchAuzefFiles = async (searchTerm: string = ''): Promise<DriveFi
 
   // 2. Dosya Listeleme (Arama)
   try {
-    const query = `mimeType = 'application/pdf' and trashed = false ${searchTerm ? `and name contains '${searchTerm}'` : ''}`;
+    const cleanTerm = searchTerm.replace(/'/g, "\\'");
+    const query = `mimeType = 'application/pdf' and trashed = false ${cleanTerm ? `and name contains '${cleanTerm}'` : ''}`;
     
     const response = await gapi.client.drive.files.list({
       q: query,
@@ -85,7 +108,7 @@ export const searchAuzefFiles = async (searchTerm: string = ''): Promise<DriveFi
     return response.result.files || [];
   } catch (err: any) {
     if (err.status === 401) {
-      accessToken = null; // Token geçersiz, bir sonrakinde tekrar iste
+      accessToken = null; 
       return searchAuzefFiles(searchTerm);
     }
     throw err;
@@ -103,7 +126,6 @@ export const downloadDriveFile = async (fileId: string): Promise<Blob> => {
       alt: 'media',
     });
     
-    // Gelen body'yi ArrayBuffer'a çevir
     const body = response.body;
     const n = body.length;
     const uint8Array = new Uint8Array(n);
