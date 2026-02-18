@@ -19,16 +19,17 @@ import GeographyView from './components/GeographyView';
 import VideoView from './components/VideoView';
 import UsefulLinksView from './components/UsefulLinksView';
 import NewsTicker from './components/NewsTicker';
-import DailyQuote from './components/DailyQuote'; // Yeni import
+import DailyQuote from './components/DailyQuote';
 import AuthView from './components/AuthView';
 import ProfileView from './components/ProfileView';
 import SettingsView from './components/SettingsView';
 import CommunityView from './components/CommunityView';
 import WeeklyPlanner from './components/WeeklyPlanner';
+import VisionStudyView from './components/VisionStudyView';
 import { getCurrentUser, checkUnitExists } from './services/dbService';
 
 type ViewState = 'home' | 'course' | 'library' | 'achievements' | 'comparison' | 'profile' | 'settings' | 'community' | 'planner' | 'useful_links';
-type TabState = 'pdf' | 'study' | 'video' | 'geography' | 'genealogy' | 'flashcards' | 'interview' | 'quiz' | 'chat' | 'glossary';
+type TabState = 'pdf' | 'study' | 'visual' | 'video' | 'geography' | 'genealogy' | 'flashcards' | 'interview' | 'quiz' | 'chat' | 'glossary';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -143,7 +144,6 @@ const App: React.FC = () => {
             <h1 className="text-4xl sm:text-6xl font-display text-hunkar dark:text-altin mb-2 tracking-widest drop-shadow-sm uppercase">Vakanüvis</h1>
             <p className="text-enderun dark:text-orange-200/60 font-serif italic text-base sm:text-lg px-4">Safa geldiniz, {user.name.split(' ')[0]}. Tedrisatınıza nereden devam edelim?</p>
             
-            {/* Günün Kelâm-ı Kibarı */}
             <DailyQuote />
 
             <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mt-6 sm:mt-8">
@@ -182,6 +182,9 @@ const App: React.FC = () => {
     const renderTabContent = () => {
       if (activeTab === 'pdf') return <PDFView course={selectedCourse} selectedUnit={selectedUnit} onUnitChange={setSelectedUnit} onUploadSuccess={checkPdfStatus} />;
       
+      // Visual tab (Kamera) her zaman açık olabilir
+      if (activeTab === 'visual') return <VisionStudyView />;
+
       if (!hasPdf && activeTab !== 'video') {
         return (
           <div className="py-20 flex flex-col items-center justify-center text-center animate-in fade-in duration-500">
@@ -243,6 +246,7 @@ const App: React.FC = () => {
             {[
               { id: 'pdf', label: 'Kitap', icon: '📄' },
               { id: 'study', label: 'Hülasa', icon: '📜' },
+              { id: 'visual', label: 'Görsel', icon: '📸' },
               { id: 'video', label: 'Video', icon: '📽️' },
               { id: 'geography', label: 'Harita', icon: '🌍' },
               { id: 'genealogy', label: 'Şecere', icon: '🌳' },

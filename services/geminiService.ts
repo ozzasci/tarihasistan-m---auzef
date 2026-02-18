@@ -31,6 +31,39 @@ const safeJsonParse = (text: string | undefined) => {
   }
 };
 
+export const analyzeHistoryImage = async (base64Image: string): Promise<any> => {
+  const ai = getAI();
+  if (!ai) throw new Error("AI başlatılamadı");
+  try {
+    const response = await ai.models.generateContent({
+      model: DEFAULT_MODEL,
+      contents: {
+        parts: [
+          { inlineData: { mimeType: "image/jpeg", data: base64Image } },
+          { text: "Bu görseldeki tarihsel metni analiz et. Şunları çıkar: 1. Özet, 2. Kritik Tarihler ve Olaylar, 3. Önemli Şahsiyetler, 4. Muhtemel AUZEF Sınav Sorusu." }
+        ]
+      },
+      config: {
+        systemInstruction: ACADEMIC_SYSTEM_INSTRUCTION,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            summary: { type: Type.STRING },
+            dates: { type: Type.ARRAY, items: { type: Type.STRING } },
+            figures: { type: Type.ARRAY, items: { type: Type.STRING } },
+            quizQuestion: { type: Type.STRING }
+          },
+          required: ["summary", "dates", "figures", "quizQuestion"]
+        }
+      }
+    });
+    return safeJsonParse(response.text);
+  } catch (err) {
+    return handleAIError(err);
+  }
+};
+
 export const fetchAuzefNews = async (): Promise<NewsAnnouncement[]> => {
   const ai = getAI();
   if (!ai) return [];
@@ -43,9 +76,6 @@ export const fetchAuzefNews = async (): Promise<NewsAnnouncement[]> => {
         tools: [{ googleSearch: {} }]
       }
     });
-    
-    // Google Search kullanıldığında JSON zorlaması yapmıyoruz, 
-    // bunun yerine groundingMetadata üzerinden linkleri çekiyoruz.
     const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
     const newsFromLinks = chunks
       .filter(chunk => chunk.web)
@@ -53,9 +83,7 @@ export const fetchAuzefNews = async (): Promise<NewsAnnouncement[]> => {
         text: chunk.web!.title || "AUZEF Duyuru",
         url: chunk.web!.uri
       }));
-
     if (newsFromLinks.length > 0) return newsFromLinks.slice(0, 5);
-
     return [
       { text: "📢 AUZEF GÜNCEL DUYURULAR SAYFASI", url: "https://auzef.istanbul.edu.tr/tr/duyurular" },
       { text: "🎓 2025-2026 AKADEMİK TAKVİM", url: "https://auzef.istanbul.edu.tr/tr/content/egitim/akademik-takvim" }
@@ -72,8 +100,6 @@ export const generateSummary = async (courseName: string, pdfBase64?: string): P
   if (!ai) throw new Error("AI başlatılamadı");
   const parts: any[] = [{ text: `AUZEF Tarih 3. Sınıf müfredatına uygun olarak "${courseName}" dersi için detaylı bir akademik özet hazırla. Ayrıca bu üniteyi en iyi anlatan bir motto belirle.` }];
   if (pdfBase64) {
-    // PDF boyutu çok büyükse bazen 400 hatası verebilir, sadece metin parçasını göndermek daha güvenli olabilir 
-    // ancak AUZEF PDF'leri genelde makul boyuttadır.
     parts.push({ inlineData: { mimeType: "application/pdf", data: pdfBase64 } });
   }
   try {

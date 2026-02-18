@@ -18,11 +18,9 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
   const [driveFiles, setDriveFiles] = useState<any[]>([]);
   const [showDriveModal, setShowDriveModal] = useState(false);
   const [isDriveLoading, setIsDriveLoading] = useState(false);
+  const [driveError, setDriveError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  /**
-   * MÜHÜRLÜ ANAHTAR: Google Cloud Console'dan alınan geçerli Client ID.
-   */
   const CLIENT_ID: string = "436414337311-qm19micum7a4snm88qfq8a1t8vsba2br.apps.googleusercontent.com"; 
 
   const isClientIdMissing = !CLIENT_ID || CLIENT_ID.trim() === "" || CLIENT_ID.includes("NUMARALARI");
@@ -70,8 +68,9 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
   };
 
   const handleDriveImport = async () => {
+    setDriveError(null);
     if (isClientIdMissing) {
-      alert("⚠️ DİKKAT: Google Drive entegrasyonu için Client ID henüz girilmemiş.");
+      alert("⚠️ DİKKAT: Google Drive entegrasyonu için Client ID girilmemiş.");
       return;
     }
 
@@ -82,9 +81,21 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
       const files = await searchAuzefFiles(token, searchQuery);
       setDriveFiles(files);
       setShowDriveModal(true);
+      setDriveError(null);
     } catch (err: any) {
       console.error("Drive Hatası:", err);
-      alert("Hata: " + (err.message || "Drive bağlantısı kurulamadı. Cloud Console ayarlarını (Origins ve Test Users) kontrol edin."));
+      let errorMsg = err.message || "Bilinmeyen bir hata.";
+      
+      if (errorMsg.includes("popup_closed_by_user")) {
+        errorMsg = "Giriş penceresi kapatıldı. Lütfen tekrar deneyin.";
+      } else if (errorMsg.includes("access_denied")) {
+        errorMsg = "Erişim reddedildi. Google hesabınızdan Drive izni vermeniz gerekmektedir.";
+      } else if (errorMsg.includes("400") || errorMsg.includes("policy")) {
+        errorMsg = "Google Güvenlik Politikası Hatası (400). Lütfen Cloud Console'da 'Authorized JavaScript Origins' kısmına mevcut URL'yi eklediğinizden ve 'Test Users' kısmına mailinizi yazdığınızdan emin olun.";
+      }
+      
+      setDriveError(errorMsg);
+      setShowDriveModal(true);
     } finally {
       setIsDriveLoading(false);
     }
@@ -92,6 +103,7 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
 
   const selectDriveFile = async (file: any) => {
     setIsDriveLoading(true);
+    setDriveError(null);
     try {
       const token = await getDriveAccessToken(CLIENT_ID);
       const blob = await downloadDriveFile(token, file.id);
@@ -100,8 +112,8 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
       loadUnit(selectedUnit);
       refreshPDFStatus();
       if (onUploadSuccess) onUploadSuccess();
-    } catch (err) {
-      alert("Ferman mahzene indirilemedi!");
+    } catch (err: any) {
+      setDriveError("Ferman indirilemedi: " + (err.message || "Yetki hatası."));
     } finally {
       setIsDriveLoading(false);
     }
@@ -115,13 +127,25 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
           <div className="bg-parshmen dark:bg-slate-900 w-full max-w-2xl rounded-[3rem] border-4 border-altin shadow-2xl flex flex-col max-h-[80vh] overflow-hidden">
             <div className="p-8 border-b-2 border-altin/20 flex justify-between items-center bg-hunkar text-altin">
               <h3 className="text-xl font-display font-black uppercase tracking-widest">☁️ BAB-I DRIVE MAHZENİ</h3>
-              <button onClick={() => setShowDriveModal(false)} className="text-2xl hover:scale-125 transition-transform">✕</button>
+              <button onClick={() => { setShowDriveModal(false); setDriveError(null); }} className="text-2xl hover:scale-125 transition-transform">✕</button>
             </div>
+            
             <div className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
-              {driveFiles.length === 0 ? (
+              {driveError ? (
+                <div className="bg-rose-50 dark:bg-rose-950/30 border-2 border-rose-200 p-6 rounded-[2rem] text-center">
+                  <span className="text-4xl block mb-4">⚠️</span>
+                  <h4 className="font-display font-bold text-rose-800 dark:text-rose-300 uppercase mb-2">ERİŞİM ENGELİ</h4>
+                  <p className="text-sm font-serif italic text-rose-700 dark:text-rose-400 leading-relaxed">
+                    {driveError}
+                  </p>
+                  <div className="mt-6 pt-4 border-t border-rose-200/30 text-[10px] text-slate-500 font-sans uppercase font-bold tracking-widest">
+                    REHBER: Cloud Console > Credentials > JavaScript Origins
+                  </div>
+                </div>
+              ) : driveFiles.length === 0 && !isDriveLoading ? (
                 <div className="text-center py-20 opacity-40">
                   <span className="text-6xl block mb-4">📂</span>
-                  <p className="font-serif italic">Uygun ferman bulunamadı.</p>
+                  <p className="font-serif italic text-lg">Uygun ferman bulunamadı.</p>
                 </div>
               ) : (
                 driveFiles.map(file => (
@@ -134,17 +158,18 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
                       <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center text-xl">📄</div>
                       <div className="text-left">
                         <div className="font-bold text-slate-800 dark:text-white group-hover:text-hunkar truncate max-w-[200px]">{file.name}</div>
-                        <div className="text-[9px] text-slate-400 font-mono mt-1">ID: {file.id}</div>
                       </div>
                     </div>
-                    <span className="text-[10px] font-black text-altin bg-hunkar px-4 py-2 rounded-full">HIFZET →</span>
+                    <span className="text-[10px] font-black text-altin bg-hunkar px-4 py-2 rounded-full shadow-md group-active:scale-90 transition-transform">HIFZET →</span>
                   </button>
                 ))
               )}
             </div>
+
             {isDriveLoading && (
-              <div className="absolute inset-0 bg-white/60 dark:bg-black/60 flex flex-col items-center justify-center">
-                <div className="w-12 h-12 border-4 border-hunkar border-t-transparent rounded-full animate-spin"></div>
+              <div className="absolute inset-0 bg-white/60 dark:bg-black/60 flex flex-col items-center justify-center z-50">
+                <div className="w-16 h-16 border-4 border-hunkar border-t-transparent rounded-full animate-spin"></div>
+                <p className="mt-4 font-display font-black text-hunkar dark:text-altin uppercase tracking-widest animate-pulse">Mahzen Taranıyor...</p>
               </div>
             )}
           </div>
@@ -190,27 +215,19 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
               <button 
                 onClick={handleDriveImport}
                 disabled={isDriveLoading}
-                className={`flex-1 sm:flex-none px-6 py-4 rounded-2xl font-display font-black text-[10px] shadow-lg active:scale-95 transition-all flex items-center gap-2 justify-center border-b-4 ${isClientIdMissing ? 'bg-slate-200 text-slate-400 border-slate-300' : 'bg-blue-600 text-white border-blue-800'}`}
+                className="flex-1 sm:flex-none px-6 py-4 rounded-2xl font-display font-black text-[10px] shadow-lg active:scale-95 transition-all flex items-center gap-2 justify-center border-b-4 bg-blue-600 text-white border-blue-800 hover:brightness-110"
               >
-                <span>☁️</span> {isClientIdMissing ? "ID GİRİLMEMİŞ" : "DRIVE'DAN GETİR"}
+                <span>☁️</span> DRIVE'DAN GETİR
               </button>
               <button 
                 onClick={() => fileInputRef.current?.click()} 
-                className="flex-1 sm:flex-none bg-hunkar text-altin border-2 border-altin px-6 py-4 rounded-2xl font-display font-black text-[10px] shadow-lg active:scale-95 transition-all flex items-center gap-2 justify-center"
+                className="flex-1 sm:flex-none bg-hunkar text-altin border-2 border-altin px-6 py-4 rounded-2xl font-display font-black text-[10px] shadow-lg active:scale-95 transition-all flex items-center gap-2 justify-center hover:brightness-110"
               >
                 📥 CİHAZDAN YÜKLE
               </button>
             </div>
             <input type="file" accept=".pdf" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
           </div>
-
-          {!loading && isClientIdMissing && (
-            <div className="mb-8 p-6 bg-amber-50 dark:bg-amber-900/20 border-2 border-dashed border-amber-300 rounded-[2rem] text-center">
-              <p className="text-xs font-serif italic text-amber-800 dark:text-amber-200">
-                <strong>Hücre-i Bilgi:</strong> Google Drive üzerinden dosya çekebilmek için <code>PDFView.tsx</code> içerisindeki <code>CLIENT_ID</code> alanına geçerli bir anahtar girmeniz gerekmektedir.
-              </p>
-            </div>
-          )}
 
           {loading ? (
             <div className="aspect-[3/4] sm:aspect-video w-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 rounded-[2.5rem]">

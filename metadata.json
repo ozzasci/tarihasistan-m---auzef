@@ -2,6 +2,7 @@
   "name": "TarihAsistanım - AUZEF Pro",
   "description": "AUZEF Tarih Bölümü 3. Sınıf öğrencileri için yapay zeka destekli profesyonel çalışma platformu.",
   "requestFramePermissions": [
+    "camera",
     "microphone",
     "geolocation"
   ]
