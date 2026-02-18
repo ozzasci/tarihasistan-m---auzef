@@ -1,41 +1,32 @@
 
 /**
- * Oğuz'un mühürlü Client ID'si. 
- * 'VAKANÜVİS' projesine aittir.
+ * VAKANÜVİS v3.0 - Drive Entegrasyonu
+ * Müellif: Oğuz Bulut & AI Asistanı
  */
-const MASTER_CLIENT_ID = "809678519144-4dpd0scel97i3p0rg9msi8ie9gteav3p.apps.googleusercontent.com"; 
 
-export const getStoredClientId = () => {
-  return MASTER_CLIENT_ID;
-};
-
-// Bu fonksiyon artık MASTER_CLIENT_ID kullandığımız için sadece geriye uyumluluk adına duruyor
-export const setStoredClientId = (id: string) => {
-  console.log("Mühürlü ID değiştirilemez.");
-};
-
-const SCOPES = "https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.metadata.readonly";
+const CLIENT_ID = "809678519144-4dpd0scel97i3p0rg9msi8ie9gteav3p.apps.googleusercontent.com";
+const SCOPES = "https://www.googleapis.com/auth/drive.readonly";
 
 export interface DriveFile {
   id: string;
   name: string;
-  mimeType: string;
   size?: string;
   modifiedTime: string;
-  thumbnailLink?: string;
 }
 
 let tokenClient: any = null;
+let accessToken: string | null = null;
 
-export const isDriveConfigured = () => true;
-
+/**
+ * API ve Google Identity Services'ı başlatır
+ */
 export const initDriveApi = (): Promise<void> => {
   return new Promise((resolve, reject) => {
     const gapi = (window as any).gapi;
     const google = (window as any).google;
 
     if (!gapi || !google) {
-      return reject(new Error("GAPI_NOT_LOADED"));
+      return reject(new Error("Google kütüphaneleri (gapi/gsi) yüklenemedi. İnternet bağlantınızı kontrol edin."));
     }
 
     gapi.load('client', async () => {
@@ -44,85 +35,87 @@ export const initDriveApi = (): Promise<void> => {
           apiKey: process.env.API_KEY,
           discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
         });
-        
+
         tokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: MASTER_CLIENT_ID,
+          client_id: CLIENT_ID,
           scope: SCOPES,
-          callback: '', 
+          callback: '', // callback sonra set edilecek
         });
+        
         resolve();
       } catch (err) {
-        console.error("GAPI Başlatma Hatası:", err);
         reject(err);
       }
     });
   });
 };
 
+/**
+ * Kullanıcıdan izin alır ve dosyaları listeler
+ */
 export const searchAuzefFiles = async (searchTerm: string = ''): Promise<DriveFile[]> => {
   const gapi = (window as any).gapi;
-  const google = (window as any).google;
 
-  if (!tokenClient) {
-    await initDriveApi();
-  }
-  
-  const token = gapi.client.getToken();
-  if (!token) {
-    try {
-      await new Promise((resolve, reject) => {
+  // 1. Token Kontrolü ve Yetkilendirme
+  if (!accessToken) {
+    accessToken = await new Promise((resolve, reject) => {
+      try {
         tokenClient.callback = (resp: any) => {
-          if (resp.error !== undefined) {
-            return reject(new Error(resp.error === 'access_denied' ? "ACCESS_DENIED" : resp.error));
-          }
-          resolve(resp);
+          if (resp.error) return reject(resp);
+          resolve(resp.access_token);
         };
         tokenClient.requestAccessToken({ prompt: 'consent' });
-      });
-    } catch (err: any) {
-      if (err.message === "ACCESS_DENIED") throw err;
-      throw new Error("AUTH_FAILED");
-    }
+      } catch (err) {
+        reject(err);
+      }
+    });
   }
 
+  // 2. Dosya Listeleme (Arama)
   try {
-    const cleanTerm = searchTerm.trim().replace(/'/g, "\\'");
-    let query = `mimeType = 'application/pdf' and trashed = false`;
-    if (cleanTerm) {
-      query += ` and name contains '${cleanTerm}'`;
-    }
-
-    const response = await gapi.client.drive.files.list({
-      pageSize: 100,
-      fields: 'files(id, name, mimeType, size, modifiedTime, thumbnailLink)',
-      q: query,
-      orderBy: 'name',
-      includeItemsFromAllDrives: true,
-      supportsAllDrives: true,
-      spaces: 'drive'
-    });
+    const query = `mimeType = 'application/pdf' and trashed = false ${searchTerm ? `and name contains '${searchTerm}'` : ''}`;
     
+    const response = await gapi.client.drive.files.list({
+      q: query,
+      fields: 'files(id, name, size, modifiedTime)',
+      pageSize: 50,
+      orderBy: 'name',
+    });
+
     return response.result.files || [];
   } catch (err: any) {
     if (err.status === 401) {
-      gapi.client.setToken(null);
+      accessToken = null; // Token geçersiz, bir sonrakinde tekrar iste
       return searchAuzefFiles(searchTerm);
     }
     throw err;
   }
 };
 
+/**
+ * Dosyayı indirir ve Blob olarak döndürür
+ */
 export const downloadDriveFile = async (fileId: string): Promise<Blob> => {
   const gapi = (window as any).gapi;
-  const response = await gapi.client.drive.files.get({
-    fileId: fileId,
-    alt: 'media',
-  });
-  
-  const body = response.body;
-  const bytes = new Uint8Array(body.length);
-  for (let i = 0; i < body.length; i++) {
-    bytes[i] = body.charCodeAt(i);
+  try {
+    const response = await gapi.client.drive.files.get({
+      fileId: fileId,
+      alt: 'media',
+    });
+    
+    // Gelen body'yi ArrayBuffer'a çevir
+    const body = response.body;
+    const n = body.length;
+    const uint8Array = new Uint8Array(n);
+    for (let i = 0; i < n; i++) {
+      uint8Array[i] = body.charCodeAt(i);
+    }
+    return new Blob([uint8Array], { type: 'application/pdf' });
+  } catch (err) {
+    console.error("İndirme hatası:", err);
+    throw new Error("Dosya mahzenden indirilemedi.");
   }
-  return new Blob([bytes], { type: 'application/pdf' });
 };
+
+export const isDriveConfigured = () => true;
+export const getStoredClientId = () => CLIENT_ID;
