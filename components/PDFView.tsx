@@ -102,18 +102,18 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
       } else if (error.message === "ACCESS_DENIED") {
         setConfigError({
           title: "İZİN FERMANI EKSİK",
-          msg: "Bâb-ı Google'dan erişim izni alınamadı. Bu uygulamanın 'Test Kullanıcısı' listesinde olmayabilirsiniz veya Google henüz doğrulamamış olabilir."
+          msg: "Bâb-ı Google'dan erişim izni alınamadı. Bu uygulamanın 'Test Kullanıcısı' listesinde olmayabilirsiniz."
         });
         setShowConfig(true);
       } else if (error.message === "AUTH_CANCELED") {
         setConfigError({
           title: "GİRİŞ İPTAL EDİLDİ",
-          msg: "Hesap seçimi veya izin verme işlemi yarıda kesildi."
+          msg: "İşlem kullanıcı tarafından durduruldu."
         });
       } else {
         setConfigError({
           title: "BEKLENMEDİK HATA",
-          msg: "Google bağlantısı kurulamadı. Lütfen internetinizi kontrol edin."
+          msg: "Bağlantı hatası oluştu. Lütfen Client ID'yi kontrol edin."
         });
       }
     } finally {
@@ -137,6 +137,7 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
     setConfigError(null);
     if (isDriveConfigured()) {
       setShowConfig(false);
+      // İlk açılışta otomatik 'auzef' araması yap, bulamazsa kullanıcıyı uyar
       await executeDriveSearch(driveSearchTerm);
     } else {
       setShowConfig(true);
@@ -277,7 +278,7 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
                      <div>
                        <h4 className="font-display font-bold text-slate-800 dark:text-white text-lg">Erişim Yetkisi Bekleniyor</h4>
                        <p className="text-sm text-slate-500 dark:text-slate-400 font-serif mt-2 max-w-sm">
-                         Eğer yeni bir kullanıcıysanız ve hata alıyorsanız, uygulamanın yöneticisi (Oğuz) tarafından <b>'Test Users'</b> listesine eklenmeniz veya uygulamanın yayına alınması gerekir.
+                         Test kullanıcısı olarak ekli olduğunuzdan emin olun.
                        </p>
                        <button onClick={() => setShowGuide(true)} className="text-[11px] text-indigo-500 underline uppercase font-black tracking-widest mt-4 bg-indigo-50 px-4 py-2 rounded-xl">"YENİ KULLANICI HATASI" ÇÖZÜMÜ →</button>
                      </div>
@@ -292,10 +293,6 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
                        {configError && (
                         <div className="bg-rose-50 dark:bg-rose-950/30 text-rose-600 p-5 rounded-3xl text-[10px] font-bold text-left border border-rose-200 shadow-lg">
                            <p className="flex items-center gap-2 mb-2"><span>⚠️</span> <b>{configError.title}:</b> {configError.msg}</p>
-                           <div className="bg-white/50 p-4 rounded-2xl space-y-3 mt-2">
-                             <p className="text-rose-700 font-black uppercase text-[9px] border-b border-rose-200 pb-1">ÇÖZÜM REHBERİ:</p>
-                             <p className="text-[9px] text-slate-600 font-serif italic">1. Oğuz Cloud Console'dan sizi eklemeli.<br/>2. Veya uygulama 'Public' moda geçirilmeli.</p>
-                           </div>
                         </div>
                        )}
                        <button onClick={saveConfigAndSearch} disabled={isDriveSearching} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-display font-black text-[10px] tracking-widest shadow-xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-2">
@@ -307,24 +304,10 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
                  ) : (
                    <div className="w-full text-left space-y-6 animate-in slide-in-from-right-4">
                       <div className="bg-indigo-50 dark:bg-slate-800 p-6 rounded-[2rem] border border-indigo-100 dark:border-slate-700">
-                        <h5 className="font-display font-black text-indigo-700 dark:text-indigo-400 text-xs uppercase mb-4">DİĞER KULLANICILARIN ERİŞİMİ İÇİN (OĞUZ'A NOT):</h5>
+                        <h5 className="font-display font-black text-indigo-700 dark:text-indigo-400 text-xs uppercase mb-4">ERİŞİM REHBERİ:</h5>
                         <ul className="text-xs space-y-5 font-serif italic text-slate-600 dark:text-slate-300">
-                          <li className="flex gap-3">
-                             <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center shrink-0 font-bold not-italic">1</span>
-                             <span>Google Cloud Console > OAuth Consent Screen sayfasına gidin.</span>
-                          </li>
-                          <li className="flex gap-3">
-                             <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center shrink-0 font-bold not-italic">2</span>
-                             <span><b>'PUBLISH APP'</b> butonuna basın. Bu sayede manuel mail eklemenize gerek kalmadan herkes girebilir.</span>
-                          </li>
-                          <li className="flex gap-3">
-                             <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center shrink-0 font-bold not-italic">3</span>
-                             <span>Uygulama onaylanana kadar kullanıcılar <b>"Advanced > Go to site (unsafe)"</b> diyerek girmelidir.</span>
-                          </li>
-                          <li className="bg-white dark:bg-black/20 p-4 rounded-xl border-2 border-indigo-200 dark:border-indigo-900 not-italic space-y-3">
-                             <span className="text-indigo-700 font-black uppercase text-[10px] block">ALTERNATİF:</span>
-                             <p className="text-[10px] text-slate-500 font-serif italic">Sadece arkadaşınız girecekse 'Test Users' listesine onun Gmail adresini eklemeniz yeterlidir.</p>
-                          </li>
+                          <li>Google Cloud Console > OAuth Consent Screen > <b>Test Users</b> kısmına mailinizi ekleyin.</li>
+                          <li>Veya uygulamayı <b>'Publish App'</b> yaparak herkesin erişimine açın.</li>
                         </ul>
                         <button onClick={() => setShowGuide(false)} className="mt-6 w-full py-4 bg-white dark:bg-slate-700 text-indigo-600 dark:text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-indigo-100 dark:border-slate-600 shadow-md">← Ayarlara Dön</button>
                       </div>
@@ -340,7 +323,7 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
                         value={driveSearchTerm}
                         onChange={(e) => setDriveSearchTerm(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && executeDriveSearch(driveSearchTerm)}
-                        placeholder="Drive'da dosya adı ara... (Örn: tarih, auzef, ünite)"
+                        placeholder="Aranacak kelime... (Boş bırakırsanız tüm PDF'ler listelenir)"
                         className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-indigo-100 dark:border-slate-700 rounded-2xl px-12 py-4 text-xs font-serif italic outline-none focus:border-indigo-500 transition-all dark:text-white"
                       />
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg">🔍</span>
@@ -351,6 +334,9 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
                         ARA
                       </button>
                     </div>
+                    <p className="mt-2 text-[10px] text-center text-slate-400 font-serif italic">
+                      İpucu: Eğer aradığınızı bulamazsanız kutuyu temizleyip tekrar ARA'ya basın.
+                    </p>
                  </div>
 
                  <div className="flex-1 overflow-y-auto pr-2 space-y-4 no-scrollbar min-h-[300px]">
@@ -362,18 +348,13 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
                     ) : driveFiles.length === 0 ? (
                       <div className="py-20 text-center flex flex-col items-center">
                         <span className="text-5xl mb-4 grayscale">🔎</span>
-                        <p className="text-slate-500 font-serif italic mb-2">"{driveSearchTerm}" araması için sonuç bulunamadı.</p>
-                        <div className="flex flex-wrap justify-center gap-2 mt-4">
-                          {['auzef', 'tarih', 'ünite', '3. sınıf'].map(t => (
-                            <button 
-                              key={t}
-                              onClick={() => { setDriveSearchTerm(t); executeDriveSearch(t); }}
-                              className="bg-indigo-50 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full text-[10px] font-bold border border-indigo-100 dark:border-indigo-900"
-                            >
-                              "{t}" diye ara
-                            </button>
-                          ))}
-                        </div>
+                        <p className="text-slate-500 font-serif italic mb-2">"{driveSearchTerm}" için sonuç bulunamadı.</p>
+                        <button 
+                          onClick={() => { setDriveSearchTerm(''); executeDriveSearch(''); }}
+                          className="mt-4 bg-indigo-600 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg"
+                        >
+                          TÜM PDF'LERİ LİSTELE
+                        </button>
                       </div>
                     ) : (
                       driveFiles.map((file, i) => (
@@ -398,9 +379,6 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
                  </div>
                </>
              )}
-             <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 text-center">
-                <p className="text-[10px] text-slate-400 font-serif italic">Verileriniz IndexedDB mahzeninde güvenle saklanır.</p>
-             </div>
           </div>
         </div>
       )}

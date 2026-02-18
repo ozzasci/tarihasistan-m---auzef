@@ -38,7 +38,9 @@ export const initDriveApi = (): Promise<void> => {
 
     gapi.load('client', async () => {
       try {
+        // API Key eklemek discovery docs yüklemesinde daha stabildir
         await gapi.client.init({
+          apiKey: process.env.API_KEY,
           discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
         });
         
@@ -58,7 +60,7 @@ export const initDriveApi = (): Promise<void> => {
   });
 };
 
-export const searchAuzefFiles = async (searchTerm: string = 'auzef'): Promise<DriveFile[]> => {
+export const searchAuzefFiles = async (searchTerm: string = ''): Promise<DriveFile[]> => {
   const clientId = getStoredClientId();
   if (!clientId) throw new Error("CONFIG_MISSING");
 
@@ -79,9 +81,8 @@ export const searchAuzefFiles = async (searchTerm: string = 'auzef'): Promise<Dr
       await new Promise((resolve, reject) => {
         tokenClient.callback = (resp: any) => {
           if (resp.error !== undefined) {
-            // Google'dan gelen spesifik hataları yakala
             if (resp.error === 'access_denied') {
-              reject(new Error("ACCESS_DENIED")); // Test kullanıcısı değil veya izin vermedi
+              reject(new Error("ACCESS_DENIED"));
             } else if (resp.error === 'invalid_client' || resp.details?.includes('OAuth client was not found')) {
               reject(new Error("INVALID_CLIENT"));
             }
@@ -98,17 +99,22 @@ export const searchAuzefFiles = async (searchTerm: string = 'auzef'): Promise<Dr
   }
 
   try {
-    const query = `name contains '${searchTerm}' and mimeType = 'application/pdf' and trashed = false`;
+    // Eğer arama terimi varsa isme göre filtrele, yoksa tüm PDF'leri getir
+    const query = searchTerm.trim() 
+      ? `name contains '${searchTerm}' and mimeType = 'application/pdf' and trashed = false`
+      : `mimeType = 'application/pdf' and trashed = false`;
+
     const response = await gapi.client.drive.files.list({
       pageSize: 50,
       fields: 'files(id, name, mimeType, size, modifiedTime, thumbnailLink)',
       q: query,
       orderBy: 'modifiedTime desc',
-      includeItemsFromAllDrives: true,
-      supportsAllDrives: true
+      spaces: 'drive'
     });
+    
     return response.result.files || [];
   } catch (err: any) {
+    console.error("Arama detay hatası:", err);
     if (err.status === 401 || (err.result?.error?.message?.includes('OAuth client'))) throw new Error("INVALID_CLIENT");
     throw err;
   }
