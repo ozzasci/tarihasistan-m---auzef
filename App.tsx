@@ -346,59 +346,87 @@ const App: React.FC = () => {
         <div className="flex items-center justify-between max-w-5xl mx-auto h-12">
           <span className="font-display text-2xl sm:text-3xl font-black text-hunkar dark:text-altin tracking-widest">VAKANÜVİS</span>
           <div className="flex items-center gap-3 relative">
-            {/* Sosyal Medya Menü Butonu */}
+            {/* Sosyal Medya Menü Butonu (Bab-ı İletişim) */}
             <button 
-              onClick={() => setShowSocialMenu(!showSocialMenu)}
-              className="w-10 h-10 rounded-full border-2 border-altin bg-hunkar text-altin flex items-center justify-center text-lg font-display font-black shadow-lg hover:scale-110 active:scale-95 transition-all"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowSocialMenu(!showSocialMenu);
+              }}
+              className="w-10 h-10 rounded-full border-2 border-altin bg-hunkar text-altin flex items-center justify-center text-lg font-display font-black shadow-lg hover:scale-110 active:scale-95 transition-all z-[110]"
             >
               B
             </button>
 
-            {/* Sosyal Medya Dropdown Menü */}
+            {/* Sosyal Medya Dropdown Menü - z-index 100 üstü yapıldı */}
             {showSocialMenu && (
-              <div className="absolute top-14 right-0 w-48 bg-parshmen dark:bg-slate-900 border-2 border-altin rounded-3xl shadow-2xl animate-in slide-in-from-top-4 duration-300 z-[60] overflow-hidden">
-                <div className="bg-hunkar py-2 px-4 text-center border-b border-altin/30">
-                  <span className="text-[9px] font-display font-black text-altin uppercase tracking-widest">Bab-ı İletişim</span>
+              <>
+                <div 
+                  className="fixed inset-0 z-[100] bg-black/10" 
+                  onClick={() => setShowSocialMenu(false)}
+                ></div>
+                <div 
+                  className="absolute top-14 right-0 w-56 bg-parshmen dark:bg-slate-900 border-4 border-altin rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-in slide-in-from-top-4 duration-300 z-[120] overflow-hidden"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="bg-hunkar py-3 px-4 text-center border-b-2 border-altin">
+                    <span className="text-[10px] font-display font-black text-altin uppercase tracking-[0.3em]">Bab-ı İletişim</span>
+                  </div>
+                  <div className="p-3 space-y-2">
+                    <a 
+                      href="https://wa.me/905309082276" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      onClick={() => setShowSocialMenu(false)}
+                      className="flex items-center gap-4 p-4 hover:bg-emerald-500 hover:text-white dark:hover:bg-emerald-600 rounded-2xl transition-all group border-2 border-transparent hover:border-altin/30"
+                    >
+                      <span className="text-2xl group-hover:scale-110 transition-transform">💬</span>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-display font-black uppercase tracking-widest">WhatsApp</span>
+                        <span className="text-[8px] font-serif italic opacity-70">Destek & Ulak Hattı</span>
+                      </div>
+                    </a>
+                    <a 
+                      href="https://t.me/VakanuvisApp" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      onClick={() => setShowSocialMenu(false)}
+                      className="flex items-center gap-4 p-4 hover:bg-sky-500 hover:text-white dark:hover:bg-sky-600 rounded-2xl transition-all group border-2 border-transparent hover:border-altin/30"
+                    >
+                      <span className="text-2xl group-hover:scale-110 transition-transform">✈️</span>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-display font-black uppercase tracking-widest">Telegram</span>
+                        <span className="text-[8px] font-serif italic opacity-70">İlim Meclisi Kanalı</span>
+                      </div>
+                    </a>
+                    <a 
+                      href="https://instagram.com" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      onClick={() => setShowSocialMenu(false)}
+                      className="flex items-center gap-4 p-4 hover:bg-gradient-to-tr hover:from-orange-500 hover:to-purple-600 hover:text-white rounded-2xl transition-all group border-2 border-transparent hover:border-altin/30"
+                    >
+                      <span className="text-2xl group-hover:scale-110 transition-transform">📸</span>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-display font-black uppercase tracking-widest">Instagram</span>
+                        <span className="text-[8px] font-serif italic opacity-70">Şahsi Mütalaa Akışı</span>
+                      </div>
+                    </a>
+                    <a 
+                      href="https://youtube.com/@AuzefYoutube" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      onClick={() => setShowSocialMenu(false)}
+                      className="flex items-center gap-4 p-4 hover:bg-red-600 hover:text-white rounded-2xl transition-all group border-2 border-transparent hover:border-altin/30"
+                    >
+                      <span className="text-2xl group-hover:scale-110 transition-transform">📽️</span>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-display font-black uppercase tracking-widest">YouTube</span>
+                        <span className="text-[8px] font-serif italic opacity-70">Ders-i Saadet Kayıtları</span>
+                      </div>
+                    </a>
+                  </div>
                 </div>
-                <div className="p-2 space-y-1">
-                  <a 
-                    href="https://wa.me/905309082276" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-3 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 rounded-2xl transition-all group"
-                  >
-                    <span className="text-xl">💬</span>
-                    <span className="text-[10px] font-display font-bold text-hunkar dark:text-altin uppercase tracking-wider group-hover:translate-x-1 transition-transform">WhatsApp</span>
-                  </a>
-                  <a 
-                    href="https://t.me/VakanuvisApp" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-3 hover:bg-blue-50 dark:hover:bg-blue-950/20 rounded-2xl transition-all group"
-                  >
-                    <span className="text-xl">✈️</span>
-                    <span className="text-[10px] font-display font-bold text-hunkar dark:text-altin uppercase tracking-wider group-hover:translate-x-1 transition-transform">Telegram</span>
-                  </a>
-                  <a 
-                    href="https://instagram.com" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-3 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-2xl transition-all group"
-                  >
-                    <span className="text-xl">📸</span>
-                    <span className="text-[10px] font-display font-bold text-hunkar dark:text-altin uppercase tracking-wider group-hover:translate-x-1 transition-transform">Instagram</span>
-                  </a>
-                  <a 
-                    href="https://youtube.com/@AuzefYoutube" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-3 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-2xl transition-all group"
-                  >
-                    <span className="text-xl">📽️</span>
-                    <span className="text-[10px] font-display font-bold text-hunkar dark:text-altin uppercase tracking-wider group-hover:translate-x-1 transition-transform">YouTube</span>
-                  </a>
-                </div>
-              </div>
+              </>
             )}
 
             <button 
@@ -426,7 +454,6 @@ const App: React.FC = () => {
           </div>
         </div>
       </nav>
-      {showSocialMenu && <div className="fixed inset-0 z-50" onClick={() => setShowSocialMenu(false)}></div>}
       <NewsTicker /> 
       <main className="max-w-5xl mx-auto">{renderContent()}</main>
     </div>
