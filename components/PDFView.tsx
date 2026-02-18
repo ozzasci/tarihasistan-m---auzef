@@ -21,11 +21,9 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   /**
-   * BURAYA GOOGLE CLOUD CONSOLE -> CREDENTIALS -> OAUTH CLIENT ID'YI YAPIŞTIRIN
-   * Örn: "123456789-abcdef.apps.googleusercontent.com"
+   * MÜHÜRLÜ ANAHTAR: Google Cloud Console'dan alınan geçerli Client ID.
    */
-  // Fix: Added explicit string type to CLIENT_ID to avoid TypeScript narrowing it to "" and causing 'never' type errors in the logical check below.
-  const CLIENT_ID: string = ""; 
+  const CLIENT_ID: string = "436414337311-qm19micum7a4snm88qfq8a1t8vsba2br.apps.googleusercontent.com"; 
 
   const isClientIdMissing = !CLIENT_ID || CLIENT_ID.trim() === "" || CLIENT_ID.includes("NUMARALARI");
 
@@ -73,7 +71,7 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
 
   const handleDriveImport = async () => {
     if (isClientIdMissing) {
-      alert("⚠️ DİKKAT: Google Drive entegrasyonu için Client ID henüz girilmemiş.\n\nLütfen Google Cloud Console'dan aldığınız anahtarı PDFView.tsx dosyasındaki CLIENT_ID alanına yapıştırın.");
+      alert("⚠️ DİKKAT: Google Drive entegrasyonu için Client ID henüz girilmemiş.");
       return;
     }
 
@@ -206,7 +204,7 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
             <input type="file" accept=".pdf" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
           </div>
 
-          {isClientIdMissing && (
+          {!loading && isClientIdMissing && (
             <div className="mb-8 p-6 bg-amber-50 dark:bg-amber-900/20 border-2 border-dashed border-amber-300 rounded-[2rem] text-center">
               <p className="text-xs font-serif italic text-amber-800 dark:text-amber-200">
                 <strong>Hücre-i Bilgi:</strong> Google Drive üzerinden dosya çekebilmek için <code>PDFView.tsx</code> içerisindeki <code>CLIENT_ID</code> alanına geçerli bir anahtar girmeniz gerekmektedir.
