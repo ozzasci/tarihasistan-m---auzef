@@ -26,10 +26,11 @@ import SettingsView from './components/SettingsView';
 import CommunityView from './components/CommunityView';
 import WeeklyPlanner from './components/WeeklyPlanner';
 import VisionStudyView from './components/VisionStudyView';
+import LiveInterviewView from './components/LiveInterviewView';
 import { getCurrentUser, checkUnitExists } from './services/dbService';
 
 type ViewState = 'home' | 'course' | 'library' | 'achievements' | 'comparison' | 'profile' | 'settings' | 'community' | 'planner' | 'useful_links';
-type TabState = 'pdf' | 'study' | 'visual' | 'video' | 'geography' | 'genealogy' | 'flashcards' | 'interview' | 'quiz' | 'chat' | 'glossary';
+type TabState = 'pdf' | 'study' | 'visual' | 'sadâ' | 'video' | 'geography' | 'genealogy' | 'flashcards' | 'interview' | 'quiz' | 'chat' | 'glossary';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -181,9 +182,8 @@ const App: React.FC = () => {
 
     const renderTabContent = () => {
       if (activeTab === 'pdf') return <PDFView course={selectedCourse} selectedUnit={selectedUnit} onUnitChange={setSelectedUnit} onUploadSuccess={checkPdfStatus} />;
-      
-      // Visual tab (Kamera) her zaman açık olabilir
       if (activeTab === 'visual') return <VisionStudyView />;
+      if (activeTab === 'sadâ') return <LiveInterviewView course={selectedCourse} />;
 
       if (!hasPdf && activeTab !== 'video') {
         return (
@@ -247,6 +247,7 @@ const App: React.FC = () => {
               { id: 'pdf', label: 'Kitap', icon: '📄' },
               { id: 'study', label: 'Hülasa', icon: '📜' },
               { id: 'visual', label: 'Görsel', icon: '📸' },
+              { id: 'sadâ', label: 'Sadâ', icon: '🎙️' },
               { id: 'video', label: 'Video', icon: '📽️' },
               { id: 'geography', label: 'Harita', icon: '🌍' },
               { id: 'genealogy', label: 'Şecere', icon: '🌳' },
