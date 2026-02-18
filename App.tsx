@@ -42,6 +42,7 @@ const App: React.FC = () => {
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [hasPdf, setHasPdf] = useState(false);
   const [showMahzen, setShowMahzen] = useState(false);
+  const [showSocialMenu, setShowSocialMenu] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     return localStorage.getItem('theme') as 'light' | 'dark' || 'light';
   });
@@ -344,7 +345,62 @@ const App: React.FC = () => {
       <nav className="bg-white/60 dark:bg-black/40 backdrop-blur-lg border-b-4 border-altin py-4 sm:py-6 px-4 sm:px-8 sticky top-0 z-50 shadow-lg pt-safe">
         <div className="flex items-center justify-between max-w-5xl mx-auto h-12">
           <span className="font-display text-2xl sm:text-3xl font-black text-hunkar dark:text-altin tracking-widest">VAKANÜVİS</span>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 relative">
+            {/* Sosyal Medya Menü Butonu */}
+            <button 
+              onClick={() => setShowSocialMenu(!showSocialMenu)}
+              className="w-10 h-10 rounded-full border-2 border-altin bg-hunkar text-altin flex items-center justify-center text-lg font-display font-black shadow-lg hover:scale-110 active:scale-95 transition-all"
+            >
+              B
+            </button>
+
+            {/* Sosyal Medya Dropdown Menü */}
+            {showSocialMenu && (
+              <div className="absolute top-14 right-0 w-48 bg-parshmen dark:bg-slate-900 border-2 border-altin rounded-3xl shadow-2xl animate-in slide-in-from-top-4 duration-300 z-[60] overflow-hidden">
+                <div className="bg-hunkar py-2 px-4 text-center border-b border-altin/30">
+                  <span className="text-[9px] font-display font-black text-altin uppercase tracking-widest">Bab-ı İletişim</span>
+                </div>
+                <div className="p-2 space-y-1">
+                  <a 
+                    href="https://wa.me/905309082276" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-3 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 rounded-2xl transition-all group"
+                  >
+                    <span className="text-xl">💬</span>
+                    <span className="text-[10px] font-display font-bold text-hunkar dark:text-altin uppercase tracking-wider group-hover:translate-x-1 transition-transform">WhatsApp</span>
+                  </a>
+                  <a 
+                    href="https://t.me/VakanuvisApp" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-3 hover:bg-blue-50 dark:hover:bg-blue-950/20 rounded-2xl transition-all group"
+                  >
+                    <span className="text-xl">✈️</span>
+                    <span className="text-[10px] font-display font-bold text-hunkar dark:text-altin uppercase tracking-wider group-hover:translate-x-1 transition-transform">Telegram</span>
+                  </a>
+                  <a 
+                    href="https://instagram.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-3 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-2xl transition-all group"
+                  >
+                    <span className="text-xl">📸</span>
+                    <span className="text-[10px] font-display font-bold text-hunkar dark:text-altin uppercase tracking-wider group-hover:translate-x-1 transition-transform">Instagram</span>
+                  </a>
+                  <a 
+                    href="https://youtube.com/@AuzefYoutube" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-3 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-2xl transition-all group"
+                  >
+                    <span className="text-xl">📽️</span>
+                    <span className="text-[10px] font-display font-bold text-hunkar dark:text-altin uppercase tracking-wider group-hover:translate-x-1 transition-transform">YouTube</span>
+                  </a>
+                </div>
+              </div>
+            )}
+
             <button 
               onClick={() => setCurrentView('settings')}
               className="w-10 h-10 rounded-full border-2 border-altin/30 flex items-center justify-center text-lg hover:bg-altin/10 transition-all active:scale-90"
@@ -370,6 +426,7 @@ const App: React.FC = () => {
           </div>
         </div>
       </nav>
+      {showSocialMenu && <div className="fixed inset-0 z-50" onClick={() => setShowSocialMenu(false)}></div>}
       <NewsTicker /> 
       <main className="max-w-5xl mx-auto">{renderContent()}</main>
     </div>
