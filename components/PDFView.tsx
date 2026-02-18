@@ -34,7 +34,7 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
   const [isDriveSearching, setIsDriveSearching] = useState(false);
   const [tempClientId, setTempClientId] = useState(getStoredClientId());
   const [showConfig, setShowConfig] = useState(!isDriveConfigured());
-  const [configError, setConfigError] = useState<{title: string, msg: string} | null>(null);
+  const [configError, setConfigError] = useState<{title: string, msg: string, detail?: string} | null>(null);
   const [showGuide, setShowGuide] = useState(false);
   const [driveSearchTerm, setDriveSearchTerm] = useState('auzef');
 
@@ -54,7 +54,7 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
     }
     loadUnit(selectedUnit);
     refreshPDFStatus();
-    initDriveApi().catch(() => {});
+    initDriveApi().catch((e) => console.warn("API Init gecikti:", e));
   }, [course.id, selectedUnit]);
 
   const loadUnit = async (unitNum: number) => {
@@ -92,28 +92,27 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
       setDriveFiles(results);
       setShowConfig(false);
     } catch (error: any) {
-      console.error("Drive hatası:", error);
-      if (error.message === "INVALID_CLIENT") {
+      console.error("Drive Arama Hatası:", error);
+      const errorMsg = error.result?.error?.message || error.message || "Bilinmeyen bağlantı hatası";
+      
+      if (error.message === "ACCESS_DENIED") {
         setConfigError({
-          title: "İD HATASI",
-          msg: "Client ID'yi yanlış kopyalamış olabilirsiniz veya Google henüz onaylamadı."
+          title: "İZİN VERİLMEDİ",
+          msg: "Google ekranında 'Dosyaları görme' kutucuğunu işaretlemediniz.",
+          detail: "Lütfen tekrar deneyin ve tüm izin kutucuklarını işaretleyin."
+        });
+      } else if (error.message === "CONFIG_MISSING" || errorMsg.includes("OAuth client")) {
+        setConfigError({
+          title: "CLIENT ID HATASI",
+          msg: "Girdiğiniz Client ID geçersiz veya Google tarafından henüz onaylanmadı.",
+          detail: "Console'da 'Authorized JavaScript Origins' kısmına mevcut URL'yi eklediğinizden emin olun."
         });
         setShowConfig(true);
-      } else if (error.message === "ACCESS_DENIED") {
-        setConfigError({
-          title: "İZİN FERMANI EKSİK",
-          msg: "Bâb-ı Google'dan erişim izni alınamadı. Bu uygulamanın 'Test Kullanıcısı' listesinde olmayabilirsiniz."
-        });
-        setShowConfig(true);
-      } else if (error.message === "AUTH_CANCELED") {
-        setConfigError({
-          title: "GİRİŞ İPTAL EDİLDİ",
-          msg: "İşlem kullanıcı tarafından durduruldu."
-        });
       } else {
         setConfigError({
-          title: "BEKLENMEDİK HATA",
-          msg: "Bağlantı hatası oluştu. Lütfen Client ID'yi kontrol edin."
+          title: "BAĞLANTI HATASI",
+          msg: "Google Drive servislerine ulaşılamadı.",
+          detail: errorMsg
         });
       }
     } finally {
@@ -137,8 +136,7 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
     setConfigError(null);
     if (isDriveConfigured()) {
       setShowConfig(false);
-      // İlk açılışta otomatik 'auzef' araması yap, bulamazsa kullanıcıyı uyar
-      await executeDriveSearch(driveSearchTerm);
+      executeDriveSearch(driveSearchTerm);
     } else {
       setShowConfig(true);
     }
@@ -161,7 +159,7 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
   };
 
   const formatSize = (bytes?: string) => {
-    if (!bytes) return "Bilinmiyor";
+    if (!bytes) return "0 MB";
     const num = parseInt(bytes);
     return (num / (1024 * 1024)).toFixed(1) + " MB";
   };
@@ -275,14 +273,16 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
                  <div className="text-5xl mt-4">🔐</div>
                  {!showGuide ? (
                    <>
-                     <div>
-                       <h4 className="font-display font-bold text-slate-800 dark:text-white text-lg">Erişim Yetkisi Bekleniyor</h4>
-                       <p className="text-sm text-slate-500 dark:text-slate-400 font-serif mt-2 max-w-sm">
-                         Test kullanıcısı olarak ekli olduğunuzdan emin olun.
+                     <div className="px-4">
+                       <h4 className="font-display font-bold text-slate-800 dark:text-white text-lg">Erişim Yetkisi Gerekiyor</h4>
+                       <p className="text-sm text-slate-500 dark:text-slate-400 font-serif mt-2 max-w-sm mx-auto">
+                         Google Drive'daki PDF'lerinizi listeleyebilmek için yetki almamız lazım.
                        </p>
-                       <button onClick={() => setShowGuide(true)} className="text-[11px] text-indigo-500 underline uppercase font-black tracking-widest mt-4 bg-indigo-50 px-4 py-2 rounded-xl">"YENİ KULLANICI HATASI" ÇÖZÜMÜ →</button>
+                       <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-2xl border border-amber-200 mt-4 text-[10px] font-bold text-amber-700 dark:text-amber-300">
+                         ⚠️ ÖNEMLİ: Giriş ekranında "Tüm dosyalarınızı görme" kutucuğunu mutlaka işaretleyin!
+                       </div>
                      </div>
-                     <div className="w-full max-w-sm space-y-3">
+                     <div className="w-full max-w-sm space-y-3 px-4">
                        <input 
                         type="text" 
                         value={tempClientId}
@@ -291,23 +291,27 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
                         className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-4 text-xs font-mono outline-none focus:border-indigo-500 transition-all dark:text-white shadow-inner"
                        />
                        {configError && (
-                        <div className="bg-rose-50 dark:bg-rose-950/30 text-rose-600 p-5 rounded-3xl text-[10px] font-bold text-left border border-rose-200 shadow-lg">
-                           <p className="flex items-center gap-2 mb-2"><span>⚠️</span> <b>{configError.title}:</b> {configError.msg}</p>
+                        <div className="bg-rose-50 dark:bg-rose-950/30 text-rose-600 p-4 rounded-2xl text-[10px] font-bold text-left border border-rose-200 shadow-lg">
+                           <p className="font-black uppercase mb-1">{configError.title}</p>
+                           <p className="opacity-80 mb-2">{configError.msg}</p>
+                           {configError.detail && <p className="text-[9px] font-mono bg-white/50 p-2 rounded italic">{configError.detail}</p>}
                         </div>
                        )}
                        <button onClick={saveConfigAndSearch} disabled={isDriveSearching} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-display font-black text-[10px] tracking-widest shadow-xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-2">
                          {isDriveSearching && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
-                         BİLGİLERİ GÜNCELLE VE BAĞLAN →
+                         DRIVE'A BAĞLAN VE ARA →
                        </button>
+                       <button onClick={() => setShowGuide(true)} className="text-[9px] text-slate-400 uppercase font-black tracking-widest">Kurulum Rehberi</button>
                      </div>
                    </>
                  ) : (
-                   <div className="w-full text-left space-y-6 animate-in slide-in-from-right-4">
+                   <div className="w-full text-left space-y-6 animate-in slide-in-from-right-4 p-4">
                       <div className="bg-indigo-50 dark:bg-slate-800 p-6 rounded-[2rem] border border-indigo-100 dark:border-slate-700">
-                        <h5 className="font-display font-black text-indigo-700 dark:text-indigo-400 text-xs uppercase mb-4">ERİŞİM REHBERİ:</h5>
-                        <ul className="text-xs space-y-5 font-serif italic text-slate-600 dark:text-slate-300">
-                          <li>Google Cloud Console > OAuth Consent Screen > <b>Test Users</b> kısmına mailinizi ekleyin.</li>
-                          <li>Veya uygulamayı <b>'Publish App'</b> yaparak herkesin erişimine açın.</li>
+                        <h5 className="font-display font-black text-indigo-700 dark:text-indigo-400 text-xs uppercase mb-4">GÜVENLİK AYARLARI:</h5>
+                        <ul className="text-xs space-y-4 font-serif italic text-slate-600 dark:text-slate-300 list-disc pl-4">
+                          <li>Google Console > APIs > Credentials > <b>OAuth 2.0 Client IDs</b> kısmındaki kaydınıza gidin.</li>
+                          <li><b>Authorized JavaScript origins</b> kısmına bu sitenin URL'sini ekleyin.</li>
+                          <li><b>Test Users</b> kısmına kendi mail adresinizi eklediğinizden emin olun.</li>
                         </ul>
                         <button onClick={() => setShowGuide(false)} className="mt-6 w-full py-4 bg-white dark:bg-slate-700 text-indigo-600 dark:text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-indigo-100 dark:border-slate-600 shadow-md">← Ayarlara Dön</button>
                       </div>
@@ -316,14 +320,14 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
                </div>
              ) : (
                <>
-                 <div className="px-1 mb-6">
+                 <div className="px-4 mb-6">
                     <div className="relative group">
                       <input 
                         type="text"
                         value={driveSearchTerm}
                         onChange={(e) => setDriveSearchTerm(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && executeDriveSearch(driveSearchTerm)}
-                        placeholder="Aranacak kelime... (Boş bırakırsanız tüm PDF'ler listelenir)"
+                        placeholder="PDF ismi ara... (Boş bırakıp ARA'ya basın)"
                         className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-indigo-100 dark:border-slate-700 rounded-2xl px-12 py-4 text-xs font-serif italic outline-none focus:border-indigo-500 transition-all dark:text-white"
                       />
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg">🔍</span>
@@ -334,12 +338,14 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
                         ARA
                       </button>
                     </div>
-                    <p className="mt-2 text-[10px] text-center text-slate-400 font-serif italic">
-                      İpucu: Eğer aradığınızı bulamazsanız kutuyu temizleyip tekrar ARA'ya basın.
-                    </p>
+                    {configError && (
+                      <div className="mt-2 bg-rose-50 text-rose-600 p-3 rounded-xl text-[9px] font-bold">
+                        ⚠️ {configError.msg} - {configError.detail}
+                      </div>
+                    )}
                  </div>
 
-                 <div className="flex-1 overflow-y-auto pr-2 space-y-4 no-scrollbar min-h-[300px]">
+                 <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-4 no-scrollbar min-h-[300px]">
                     {isDriveSearching ? (
                       <div className="py-20 text-center">
                         <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
@@ -348,17 +354,20 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
                     ) : driveFiles.length === 0 ? (
                       <div className="py-20 text-center flex flex-col items-center">
                         <span className="text-5xl mb-4 grayscale">🔎</span>
-                        <p className="text-slate-500 font-serif italic mb-2">"{driveSearchTerm}" için sonuç bulunamadı.</p>
+                        <p className="text-slate-500 font-serif italic mb-2">Henüz PDF bulunamadı.</p>
+                        <p className="text-[10px] text-slate-400 max-w-xs mx-auto mb-6">
+                          Drive'ınızda PDF olduğundan ve girişte tüm izinleri verdiğinizden emin olun.
+                        </p>
                         <button 
                           onClick={() => { setDriveSearchTerm(''); executeDriveSearch(''); }}
-                          className="mt-4 bg-indigo-600 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg"
+                          className="mt-4 bg-indigo-600 text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg"
                         >
-                          TÜM PDF'LERİ LİSTELE
+                          TÜMÜNÜ LİSTELEMEYİ DENE
                         </button>
                       </div>
                     ) : (
                       driveFiles.map((file, i) => (
-                        <div key={i} className="bg-slate-50 dark:bg-slate-800 p-5 rounded-3xl border border-slate-100 dark:border-slate-700 flex items-center justify-between group hover:border-indigo-300 transition-all">
+                        <div key={file.id} className="bg-slate-50 dark:bg-slate-800 p-5 rounded-3xl border border-slate-100 dark:border-slate-700 flex items-center justify-between group hover:border-indigo-300 transition-all">
                            <div className="flex-1 min-w-0 pr-4 flex items-center gap-3">
                              <div className="w-10 h-10 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center text-xl shrink-0">📄</div>
                              <div className="truncate">
@@ -374,8 +383,12 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
                       ))
                     )}
                  </div>
-                 <div className="mt-4 text-center">
-                    <button onClick={() => setShowConfig(true)} className="text-[9px] font-black text-slate-400 uppercase tracking-widest hover:text-indigo-500">⚙️ Yapılandırmayı Güncelle</button>
+                 <div className="p-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center shrink-0">
+                    <button onClick={() => setShowConfig(true)} className="text-[9px] font-black text-slate-400 uppercase tracking-widest hover:text-indigo-500">⚙️ Yapılandırma</button>
+                    <div className="flex items-center gap-1">
+                       <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                       <span className="text-[9px] font-black text-emerald-500 uppercase">Sistem Aktif</span>
+                    </div>
                  </div>
                </>
              )}
