@@ -1,16 +1,17 @@
 
 /**
- * Oğuz, burada 'VAKANÜVİS' isimli Client ID tanımlı.
- * Eğer 'VAKANÜVİS 2'yi kullanmak istersen sonu 'tppj...' ile biten ID'yi buraya yapıştırabilirsin.
+ * Oğuz'un mühürlü Client ID'si. 
+ * 'VAKANÜVİS' projesine aittir.
  */
-let MASTER_CLIENT_ID = "809678519144-4dpd0scel97i3p0rg9msi8ie9gteav3p.apps.googleusercontent.com"; 
+const MASTER_CLIENT_ID = "809678519144-4dpd0scel97i3p0rg9msi8ie9gteav3p.apps.googleusercontent.com"; 
 
 export const getStoredClientId = () => {
-  return localStorage.getItem('google_client_id') || MASTER_CLIENT_ID;
+  return MASTER_CLIENT_ID;
 };
 
+// Bu fonksiyon artık MASTER_CLIENT_ID kullandığımız için sadece geriye uyumluluk adına duruyor
 export const setStoredClientId = (id: string) => {
-  localStorage.setItem('google_client_id', id);
+  console.log("Mühürlü ID değiştirilemez.");
 };
 
 const SCOPES = "https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.metadata.readonly";
@@ -26,7 +27,7 @@ export interface DriveFile {
 
 let tokenClient: any = null;
 
-export const isDriveConfigured = () => getStoredClientId().trim().length > 0;
+export const isDriveConfigured = () => true;
 
 export const initDriveApi = (): Promise<void> => {
   return new Promise((resolve, reject) => {
@@ -44,14 +45,11 @@ export const initDriveApi = (): Promise<void> => {
           discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
         });
         
-        const clientId = getStoredClientId();
-        if (clientId) {
-          tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: clientId,
-            scope: SCOPES,
-            callback: '', 
-          });
-        }
+        tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: MASTER_CLIENT_ID,
+          scope: SCOPES,
+          callback: '', 
+        });
         resolve();
       } catch (err) {
         console.error("GAPI Başlatma Hatası:", err);
@@ -62,18 +60,11 @@ export const initDriveApi = (): Promise<void> => {
 };
 
 export const searchAuzefFiles = async (searchTerm: string = ''): Promise<DriveFile[]> => {
-  const clientId = getStoredClientId();
-  if (!clientId) throw new Error("CONFIG_MISSING");
-
   const gapi = (window as any).gapi;
   const google = (window as any).google;
 
-  if (!tokenClient || tokenClient.client_id !== clientId) {
-    tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: clientId,
-      scope: SCOPES,
-      callback: '', 
-    });
+  if (!tokenClient) {
+    await initDriveApi();
   }
   
   const token = gapi.client.getToken();
