@@ -21,13 +21,13 @@ const CommunityView: React.FC<CommunityViewProps> = ({ user, onBack }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [messages, setMessages] = useState<DirectMessage[]>([]);
   const [isSharing, setIsSharing] = useState(false);
-  const [isMessaging, setIsMessaging] = useState<User | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importCode, setImportCode] = useState('');
   
   // Form States
   const [newTitle, setNewTitle] = useState('');
   const [newUrl, setNewUrl] = useState('');
   const [newCourse, setNewCourse] = useState<CourseId>(CourseId.RUSYA);
-  const [msgContent, setMsgContent] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -62,43 +62,50 @@ const CommunityView: React.FC<CommunityViewProps> = ({ user, onBack }) => {
     fetchData();
   };
 
-  const handleSendMessage = async () => {
-    if (!msgContent || !isMessaging) return;
-    const msg: DirectMessage = {
-      id: Math.random().toString(36).substr(2, 9),
-      fromId: user.email,
-      fromName: user.name,
-      toId: isMessaging.email,
-      content: msgContent,
-      date: Date.now(),
-      isRead: false
-    };
-    await sendMessage(msg);
-    setIsMessaging(null);
-    setMsgContent('');
-    fetchData();
-    alert("Mesaj gönderildi!");
+  const handleImport = async () => {
+    try {
+      const decoded = JSON.parse(atob(importCode));
+      if (decoded.title && decoded.url) {
+        await shareResource({
+          ...decoded,
+          id: Math.random().toString(36).substr(2, 9),
+          date: Date.now()
+        });
+        setImportCode('');
+        setIsImporting(false);
+        fetchData();
+        alert("Ferman başarıyla ithal edildi!");
+      }
+    } catch (e) {
+      alert("Geçersiz ferman kodu! Lütfen kodu doğru kopyaladığınızdan emin olun.");
+    }
+  };
+
+  const copyExportCode = (res: SharedResource) => {
+    const code = btoa(JSON.stringify(res));
+    navigator.clipboard.writeText(code);
+    alert("Paylaşım kodu kopyalandı! Arkadaşınıza göndererek bu kaynağı onun mahzenine eklemesini sağlayabilirsiniz.");
   };
 
   return (
     <div className="max-w-4xl mx-auto py-10 px-4 animate-in fade-in slide-in-from-bottom-6 duration-500">
       <div className="flex items-center justify-between mb-8">
-        <button onClick={onBack} className="text-slate-400 dark:text-slate-500 font-bold hover:text-slate-900 dark:hover:text-white flex items-center gap-2 group">
+        <button onClick={onBack} className="text-hunkar dark:text-altin font-display font-bold hover:opacity-70 flex items-center gap-2 group p-2">
           <span className="group-hover:-translate-x-1 transition-transform">←</span> Geri Dön
         </button>
-        <h2 className="text-2xl font-serif font-black text-slate-900 dark:text-white">Topluluk Hub</h2>
+        <h2 className="text-3xl font-display font-black text-hunkar dark:text-altin uppercase tracking-widest">Meclis-i İrfan</h2>
       </div>
 
-      <div className="flex bg-slate-100 dark:bg-slate-900 p-1.5 rounded-2xl mb-8 gap-1">
+      <div className="flex bg-white/40 dark:bg-black/20 p-1.5 rounded-2xl mb-8 gap-1 border-2 border-altin/20 shadow-inner">
         {[
-          { id: 'feed', label: 'Kaynak Panosu', icon: '📋' },
-          { id: 'users', label: 'Öğrenciler', icon: '🎓' },
-          { id: 'inbox', label: 'Posta Kutusu', icon: '📬' }
+          { id: 'feed', label: 'Havadis-i Bilgi', icon: '📜' },
+          { id: 'users', label: 'Talebeler', icon: '🎓' },
+          { id: 'inbox', label: 'Mektuplaşma', icon: '📬' }
         ].map(tab => (
           <button 
             key={tab.id}
             onClick={() => setActiveSubTab(tab.id as any)}
-            className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeSubTab === tab.id ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400'}`}
+            className={`flex-1 py-3 rounded-xl text-[10px] font-display font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeSubTab === tab.id ? 'bg-hunkar text-white shadow-xl' : 'text-hunkar/40 dark:text-altin/40 hover:bg-white/20'}`}
           >
             <span>{tab.icon}</span> {tab.label}
           </button>
@@ -107,29 +114,54 @@ const CommunityView: React.FC<CommunityViewProps> = ({ user, onBack }) => {
 
       {activeSubTab === 'feed' && (
         <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Paylaşılan Son Kaynaklar</h3>
-            <button 
-              onClick={() => setIsSharing(true)}
-              className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg"
-            >
-              Kaynak Paylaş +
-            </button>
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <h3 className="text-xl font-display font-bold text-hunkar dark:text-altin uppercase">Bilgi Paylaşım Divanı</h3>
+            <div className="flex gap-2 w-full sm:w-auto">
+               <button 
+                onClick={() => setIsImporting(true)}
+                className="flex-1 sm:flex-none bg-altin text-hunkar px-6 py-3 rounded-xl font-display font-black text-[10px] uppercase shadow-lg border border-white/50"
+              >
+                📥 FERMAN İTHAL ET
+              </button>
+              <button 
+                onClick={() => setIsSharing(true)}
+                className="flex-1 sm:flex-none bg-hunkar text-altin px-6 py-3 rounded-xl font-display font-black text-[10px] uppercase shadow-lg border border-altin"
+              >
+                ➕ KAYNAK EKLE
+              </button>
+            </div>
           </div>
 
+          {isImporting && (
+            <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border-4 border-altin shadow-2xl animate-in zoom-in-95">
+               <h4 className="text-lg font-display font-black text-hunkar dark:text-altin mb-4">📜 FERMAN KODUNU YAPIŞTIR</h4>
+               <textarea 
+                value={importCode}
+                onChange={(e) => setImportCode(e.target.value)}
+                placeholder="Arkadaşınızdan gelen paylaşım kodunu buraya yapıştırın..."
+                className="w-full h-32 bg-parshmen dark:bg-slate-800 border-2 border-altin/20 rounded-2xl p-4 text-sm font-mono dark:text-white outline-none focus:border-altin mb-4"
+               />
+               <div className="flex justify-end gap-3">
+                  <button onClick={() => setIsImporting(false)} className="px-6 py-2 text-slate-400 font-display font-bold text-[10px]">VAZGEÇ</button>
+                  <button onClick={handleImport} className="bg-hunkar text-altin px-10 py-3 rounded-xl font-display font-black text-[10px] shadow-xl">MAHZENE EKLE</button>
+               </div>
+            </div>
+          )}
+
           {isSharing && (
-            <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-indigo-100 dark:border-indigo-900 shadow-xl animate-in zoom-in-95">
+            <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border-4 border-altin shadow-2xl animate-in zoom-in-95">
+              <h4 className="text-lg font-display font-black text-hunkar dark:text-altin mb-6">🖋️ YENİ FERMAN TAHRİRİ</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <input 
                   placeholder="Kaynak Başlığı (Örn: 3. Ünite Özeti)" 
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  className="bg-slate-50 dark:bg-slate-800 border-none rounded-xl px-4 py-3 text-sm dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="bg-parshmen dark:bg-slate-800 border-2 border-altin/10 rounded-xl px-4 py-4 text-sm dark:text-white outline-none focus:border-altin"
                 />
                 <select 
                   value={newCourse}
                   onChange={(e) => setNewCourse(e.target.value as CourseId)}
-                  className="bg-slate-50 dark:bg-slate-800 border-none rounded-xl px-4 py-3 text-sm dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="bg-parshmen dark:bg-slate-800 border-2 border-altin/10 rounded-xl px-4 py-4 text-sm dark:text-white outline-none focus:border-altin"
                 >
                   {COURSES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
@@ -137,33 +169,47 @@ const CommunityView: React.FC<CommunityViewProps> = ({ user, onBack }) => {
                   placeholder="URL / Drive Linki" 
                   value={newUrl}
                   onChange={(e) => setNewUrl(e.target.value)}
-                  className="md:col-span-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl px-4 py-3 text-sm dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="md:col-span-2 bg-parshmen dark:bg-slate-800 border-2 border-altin/10 rounded-xl px-4 py-4 text-sm dark:text-white outline-none focus:border-altin"
                 />
               </div>
-              <div className="flex justify-end gap-2">
-                <button onClick={() => setIsSharing(false)} className="px-4 py-2 text-slate-400 text-xs font-bold uppercase">İptal</button>
-                <button onClick={handleShare} className="bg-indigo-600 text-white px-6 py-2 rounded-xl text-xs font-black uppercase shadow-md">Yayınla</button>
+              <div className="flex justify-end gap-3">
+                <button onClick={() => setIsSharing(false)} className="px-6 py-2 text-slate-400 font-display font-bold text-[10px]">İPTAL</button>
+                <button onClick={handleShare} className="bg-hunkar text-altin px-10 py-3 rounded-xl font-display font-black text-[10px] shadow-xl">DİVANDA PAYLAŞ</button>
               </div>
             </div>
           )}
 
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-6">
             {resources.length === 0 ? (
-              <div className="text-center py-20 opacity-40 italic">Henüz paylaşım yapılmamış. İlk sen ol!</div>
+              <div className="text-center py-20 bg-white/20 rounded-[3rem] border-4 border-dashed border-altin/20">
+                <div className="text-6xl mb-4 opacity-20">📜</div>
+                <p className="font-serif italic text-slate-400">Bu divanda henüz bir kelam edilmemiş.</p>
+              </div>
             ) : (
               resources.map(res => (
-                <div key={res.id} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950 flex items-center justify-center text-2xl">🔗</div>
-                    <div>
-                      <h4 className="font-bold text-slate-800 dark:text-white leading-tight">{res.title}</h4>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{COURSES.find(c => c.id === res.courseId)?.name}</span>
-                        <span className="text-[10px] text-slate-400">• {res.senderName}</span>
+                <div key={res.id} className="bg-white dark:bg-slate-900 p-8 rounded-[3rem] border-t-4 border-altin shadow-xl group hover:shadow-2xl transition-all rumi-border relative overflow-hidden">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-5">
+                      <div className="w-14 h-14 rounded-2xl bg-hunkar/5 dark:bg-altin/5 flex items-center justify-center text-3xl border border-altin/20">🔗</div>
+                      <div>
+                        <h4 className="font-display font-black text-hunkar dark:text-altin text-lg leading-tight uppercase tracking-wider">{res.title}</h4>
+                        <div className="flex items-center gap-3 mt-1.5">
+                          <span className="text-[9px] font-black bg-altin/20 text-hunkar px-2 py-0.5 rounded-full uppercase tracking-widest">{COURSES.find(c => c.id === res.courseId)?.name}</span>
+                          <span className="text-[9px] text-slate-400 font-serif italic">Müellif: {res.senderName}</span>
+                        </div>
                       </div>
                     </div>
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      <button 
+                        onClick={() => copyExportCode(res)}
+                        className="flex-1 sm:flex-none bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-4 py-3 rounded-xl text-[9px] font-display font-black uppercase tracking-widest hover:bg-altin hover:text-hunkar transition-all"
+                      >
+                        Kodu Al 📋
+                      </button>
+                      <a href={res.url} target="_blank" rel="noreferrer" className="flex-1 sm:flex-none bg-hunkar text-altin px-8 py-3 rounded-xl text-[10px] font-display font-black uppercase tracking-widest shadow-lg text-center">İncele →</a>
+                    </div>
                   </div>
-                  <a href={res.url} target="_blank" rel="noreferrer" className="bg-slate-900 dark:bg-indigo-600 text-white px-5 py-2 rounded-xl text-xs font-bold shadow-lg active:scale-95 transition-all">İncele</a>
+                  <div className="absolute right-[-20px] bottom-[-20px] opacity-[0.03] text-8xl pointer-events-none">📜</div>
                 </div>
               ))
             )}
@@ -171,73 +217,33 @@ const CommunityView: React.FC<CommunityViewProps> = ({ user, onBack }) => {
         </div>
       )}
 
+      {/* Talebeler ve Mektuplaşma sekmeleri dbService üzerinden local olarak çalışmaya devam eder */}
       {activeSubTab === 'users' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <p className="col-span-full text-center text-slate-400 font-serif italic mb-4">Bu cihazda kayıtlı diğer talebeler:</p>
           {users.map(u => (
-            <div key={u.email} className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl overflow-hidden">
+            <div key={u.email} className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border-2 border-slate-100 dark:border-slate-800 flex items-center justify-between shadow-sm">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-hunkar text-altin flex items-center justify-center text-2xl overflow-hidden border-2 border-altin">
                   {u.avatarUrl ? <img src={u.avatarUrl} alt="" className="w-full h-full object-cover" /> : u.name.charAt(0)}
                 </div>
                 <div>
-                  <div className="font-bold text-slate-800 dark:text-white text-sm">{u.name}</div>
-                  <div className="text-[10px] text-slate-400">AUZEF 3. Sınıf Öğrencisi</div>
+                  <div className="font-display font-bold text-hunkar dark:text-altin text-sm uppercase">{u.name}</div>
+                  <div className="text-[9px] text-slate-400 uppercase font-black tracking-widest">AUZEF Talebesi</div>
                 </div>
               </div>
-              <button 
-                onClick={() => setIsMessaging(u)}
-                className="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 p-3 rounded-xl hover:bg-indigo-600 hover:text-white transition-all"
-              >
-                ✉️
-              </button>
             </div>
           ))}
         </div>
       )}
-
+      
       {activeSubTab === 'inbox' && (
-        <div className="space-y-4">
-          {messages.length === 0 ? (
-             <div className="text-center py-20 opacity-40 italic">Gelen kutusu boş.</div>
-          ) : (
-            messages.map(msg => (
-              <div key={msg.id} className={`p-6 rounded-[2rem] border transition-all ${msg.toId === user.email ? 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800' : 'bg-slate-50 dark:bg-slate-950 border-transparent opacity-70'}`}>
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-black uppercase tracking-widest text-indigo-600">{msg.fromId === user.email ? 'SEN' : msg.fromName}</span>
-                    <span className="text-[10px] text-slate-400">→ {new Date(msg.date).toLocaleDateString('tr-TR')}</span>
-                  </div>
-                  {msg.fromId !== user.email && (
-                    <button onClick={() => setIsMessaging(users.find(u => u.email === msg.fromId)!)} className="text-[10px] font-black text-indigo-500 uppercase">Yanıtla</button>
-                  )}
-                </div>
-                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed italic">"{msg.content}"</p>
-              </div>
-            ))
-          )}
-        </div>
-      )}
-
-      {/* Messaging Modal */}
-      {isMessaging && (
-        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[3rem] p-8 shadow-2xl animate-in zoom-in-95">
-             <div className="text-center mb-6">
-               <div className="w-16 h-16 bg-indigo-600 text-white rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4">✉️</div>
-               <h3 className="text-xl font-bold text-slate-900 dark:text-white">{isMessaging.name} kişisine mesaj gönder</h3>
-               <p className="text-xs text-slate-500">Kaynak linki veya notlarınızı paylaşabilirsiniz.</p>
-             </div>
-             <textarea 
-               value={msgContent}
-               onChange={(e) => setMsgContent(e.target.value)}
-               placeholder="Mesajınızı buraya yazın..."
-               className="w-full h-32 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl p-4 text-sm dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 mb-6 resize-none"
-             />
-             <div className="flex gap-2">
-               <button onClick={() => setIsMessaging(null)} className="flex-1 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Vazgeç</button>
-               <button onClick={handleSendMessage} className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg">Gönder →</button>
-             </div>
-          </div>
+        <div className="text-center py-20 bg-white/20 rounded-[3rem] border-4 border-dashed border-altin/20">
+          <div className="text-6xl mb-4 opacity-20">📬</div>
+          <h3 className="text-xl font-display font-black text-hunkar dark:text-altin uppercase">Haberleşme Odası</h3>
+          <p className="text-sm text-slate-400 font-serif italic mt-4 max-w-sm mx-auto">
+            Bu bölüm, aynı cihazı kullanan farklı kullanıcılar arası mesajlaşma içindir. Genel ağ üzerinden mesajlaşma ileride eklenecektir.
+          </p>
         </div>
       )}
     </div>

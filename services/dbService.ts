@@ -7,11 +7,11 @@ const STORE_USERS = 'users';
 const STORE_RESOURCES = 'shared_resources';
 const STORE_MESSAGES = 'messages';
 const STORE_STATS = 'stats';
-const STORE_VIDEO_URLS = 'video_urls'; // Yeni mahzen
+const STORE_VIDEO_URLS = 'video_urls';
 
 export const initDB = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 7); // Versiyon yükseltildi
+    const request = indexedDB.open(DB_NAME, 7);
     request.onupgradeneeded = () => {
       const db = request.result;
       if (!db.objectStoreNames.contains(STORE_PDFS)) db.createObjectStore(STORE_PDFS);
@@ -44,7 +44,6 @@ export const deleteCourseVideoUrl = async (courseId: string) => {
   return db.transaction(STORE_VIDEO_URLS, 'readwrite').objectStore(STORE_VIDEO_URLS).delete(courseId);
 };
 
-// ... Mevcut diğer fonksiyonlar (checkUnitExists, saveUnitPDF, getUnitPDF vb. olduğu gibi korunur)
 export const checkUnitExists = async (courseId: string, unitNumber: number): Promise<boolean> => {
   const db = await initDB();
   const tx = db.transaction(STORE_PDFS, 'readonly');

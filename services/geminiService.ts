@@ -20,35 +20,45 @@ const handleAIError = (error: any) => {
   throw error;
 };
 
+const safeJsonParse = (text: string | undefined) => {
+  if (!text) return null;
+  try {
+    const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/) || text.match(/```\n([\s\S]*?)\n```/) || [null, text];
+    const cleanJson = jsonMatch[1] ? jsonMatch[1].trim() : text.trim();
+    return JSON.parse(cleanJson);
+  } catch (e) {
+    return null;
+  }
+};
+
 export const fetchAuzefNews = async (): Promise<NewsAnnouncement[]> => {
   const ai = getAI();
   if (!ai) return [];
   try {
     const response = await ai.models.generateContent({
       model: DEFAULT_MODEL,
-      contents: "İstanbul Üniversitesi AUZEF (auzef.istanbul.edu.tr) resmi duyurular sayfasındaki en güncel ve önemli 5 haberi bul. Her haberin başlığını ve doğrudan resmi URL bağlantısını ver. Sınav tarihleri yerine güncel duyurulara odaklan.",
+      contents: "İstanbul Üniversitesi AUZEF (auzef.istanbul.edu.tr) resmi duyurular sayfasındaki en güncel haberleri ve önemli linkleri listele.",
       config: {
-        systemInstruction: "Sen bir vakanüvis asistanısın. Sadece auzef.istanbul.edu.tr üzerindeki resmi ve güncel haberleri bul. Yanıtı mutlaka JSON formatında, text ve url alanlarını içeren bir dizi olarak ver.",
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              text: { type: Type.STRING, description: "Haberin kısa ve öz başlığı." },
-              url: { type: Type.STRING, description: "Haberin resmi auzef.istanbul.edu.tr bağlantısı." }
-            },
-            required: ["text", "url"]
-          }
-        },
+        systemInstruction: "Sen bir vakanüvis asistanısın. Sadece auzef.istanbul.edu.tr üzerindeki resmi haberleri bul. Yanıtında mutlaka gerçek web sitesi bağlantılarını (URL) kullan.",
         tools: [{ googleSearch: {} }]
       }
     });
     
-    const data = JSON.parse(response.text || "[]");
-    return data.length > 0 ? data : [
+    // Google Search kullanıldığında JSON zorlaması yapmıyoruz, 
+    // bunun yerine groundingMetadata üzerinden linkleri çekiyoruz.
+    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+    const newsFromLinks = chunks
+      .filter(chunk => chunk.web)
+      .map(chunk => ({
+        text: chunk.web!.title || "AUZEF Duyuru",
+        url: chunk.web!.uri
+      }));
+
+    if (newsFromLinks.length > 0) return newsFromLinks.slice(0, 5);
+
+    return [
       { text: "📢 AUZEF GÜNCEL DUYURULAR SAYFASI", url: "https://auzef.istanbul.edu.tr/tr/duyurular" },
-      { text: "🎓 2025-2026 AKADEMİK TAKVİM VE KAYITLAR", url: "https://auzef.istanbul.edu.tr/tr/content/egitim/akademik-takvim" }
+      { text: "🎓 2025-2026 AKADEMİK TAKVİM", url: "https://auzef.istanbul.edu.tr/tr/content/egitim/akademik-takvim" }
     ];
   } catch (err) {
     return [
@@ -60,8 +70,12 @@ export const fetchAuzefNews = async (): Promise<NewsAnnouncement[]> => {
 export const generateSummary = async (courseName: string, pdfBase64?: string): Promise<StudySummary> => {
   const ai = getAI();
   if (!ai) throw new Error("AI başlatılamadı");
-  const parts: any[] = [{ text: `AUZEF Tarih 3. Sınıf müfredatına uygun olarak "${courseName}" dersi için detaylı bir akademik özet hazırla. Ayrıca bu üniteyi en iyi anlatan, ünite içinde geçen veya üniteyle ilişkili bir özlü sözü (motto) belirle.` }];
-  if (pdfBase64) parts.push({ inlineData: { mimeType: "application/pdf", data: pdfBase64 } });
+  const parts: any[] = [{ text: `AUZEF Tarih 3. Sınıf müfredatına uygun olarak "${courseName}" dersi için detaylı bir akademik özet hazırla. Ayrıca bu üniteyi en iyi anlatan bir motto belirle.` }];
+  if (pdfBase64) {
+    // PDF boyutu çok büyükse bazen 400 hatası verebilir, sadece metin parçasını göndermek daha güvenli olabilir 
+    // ancak AUZEF PDF'leri genelde makul boyuttadır.
+    parts.push({ inlineData: { mimeType: "application/pdf", data: pdfBase64 } });
+  }
   try {
     const response = await ai.models.generateContent({
       model: DEFAULT_MODEL,
@@ -74,7 +88,7 @@ export const generateSummary = async (courseName: string, pdfBase64?: string): P
           properties: {
             title: { type: Type.STRING },
             content: { type: Type.STRING },
-            motto: { type: Type.STRING, description: "Üniteyi özetleyen veya ünite girişinde yer alan hikmetli söz." },
+            motto: { type: Type.STRING },
             keyDates: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { date: { type: Type.STRING }, event: { type: Type.STRING } } } },
             importantFigures: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { name: { type: Type.STRING }, role: { type: Type.STRING } } } }
           },
@@ -82,7 +96,7 @@ export const generateSummary = async (courseName: string, pdfBase64?: string): P
         }
       }
     });
-    return JSON.parse(response.text || '{}');
+    return safeJsonParse(response.text) || { title: "Hata", content: "Özet oluşturulamadı.", motto: "", keyDates: [], importantFigures: [] };
   } catch (err) { return handleAIError(err); }
 };
 
@@ -102,11 +116,12 @@ export const generateWeeklyPlan = async (studentName: string, courses: string[],
           properties: {
             sessions: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { day: { type: Type.STRING }, time: { type: Type.STRING }, courseName: { type: Type.STRING }, topic: { type: Type.STRING }, duration: { type: Type.STRING }, type: { type: Type.STRING } } } },
             advice: { type: Type.STRING }
-          }
+          },
+          required: ["sessions", "advice"]
         }
       }
     });
-    return JSON.parse(response.text || '{}');
+    return safeJsonParse(response.text) || { sessions: [], advice: "Program oluşturulamadı." };
   } catch (err) { return handleAIError(err); }
 };
 
@@ -123,7 +138,7 @@ export const compareHistory = async (entity1: string, entity2: string): Promise<
         responseSchema: { type: Type.OBJECT, properties: { entities: { type: Type.ARRAY, items: { type: Type.STRING } }, aspects: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, entity1Info: { type: Type.STRING }, entity2Info: { type: Type.STRING } } } }, conclusion: { type: Type.STRING } } }
       }
     });
-    return JSON.parse(response.text || '{}');
+    return safeJsonParse(response.text) || { entities: [entity1, entity2], aspects: [], conclusion: "Analiz başarısız." };
   } catch (err) { return handleAIError(err); }
 };
 
@@ -140,7 +155,7 @@ export const generateGenealogy = async (courseName: string): Promise<RulerNode[]
         responseSchema: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { name: { type: Type.STRING }, period: { type: Type.STRING }, keyAction: { type: Type.STRING } } } }
       }
     });
-    return JSON.parse(response.text || '[]');
+    return safeJsonParse(response.text) || [];
   } catch (err) { return handleAIError(err); }
 };
 
@@ -160,10 +175,10 @@ export const generateFlashcards = async (courseName: string): Promise<Flashcard[
   try {
     const response = await ai.models.generateContent({
       model: DEFAULT_MODEL,
-      contents: `"${courseName}" flashcards.`,
+      contents: `"${courseName}" için ezber kartları.`,
       config: { systemInstruction: ACADEMIC_SYSTEM_INSTRUCTION, responseMimeType: "application/json", responseSchema: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { front: { type: Type.STRING }, back: { type: Type.STRING } } } } }
     });
-    return JSON.parse(response.text || '[]');
+    return safeJsonParse(response.text) || [];
   } catch (err) { return handleAIError(err); }
 };
 
@@ -193,10 +208,10 @@ export const generateQuiz = async (courseName: string): Promise<QuizQuestion[]> 
   try {
     const response = await ai.models.generateContent({
       model: DEFAULT_MODEL,
-      contents: `"${courseName}" quiz.`,
+      contents: `"${courseName}" hakkında 5 soruluk test.`,
       config: { systemInstruction: ACADEMIC_SYSTEM_INSTRUCTION, responseMimeType: "application/json", responseSchema: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { question: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } }, correctAnswer: { type: Type.INTEGER }, explanation: { type: Type.STRING } } } } }
     });
-    return JSON.parse(response.text || '[]');
+    return safeJsonParse(response.text) || [];
   } catch (err) { return handleAIError(err); }
 };
 

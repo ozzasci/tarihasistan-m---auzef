@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Course, StudySummary } from '../types';
 import { generateSummary, generateSpeech, getHistoricalLocations } from '../services/geminiService';
-import { saveNote, getNote, getProgress, getAllPDFKeys, getUnitPDF } from '../services/dbService';
+import { saveNote, getNote, getUnitPDF, getAllPDFKeys } from '../services/dbService';
 
 interface StudyViewProps {
   course: Course;
@@ -14,7 +14,8 @@ const blobToBase64 = (blob: Blob): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onloadend = () => {
-      const base64String = (reader.result as string).split(',')[1];
+      const result = reader.result as string;
+      const base64String = result.split(',')[1];
       resolve(base64String);
     };
     reader.onerror = reject;
@@ -23,12 +24,18 @@ const blobToBase64 = (blob: Blob): Promise<string> => {
 };
 
 function decode(base64: string) {
-  const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
+  if (!base64) return new Uint8Array(0);
+  try {
+    const binaryString = atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes;
+  } catch (e) {
+    console.error("Kod çözme hatası:", e);
+    return new Uint8Array(0);
   }
-  return bytes;
 }
 
 async function decodeAudioData(
@@ -36,28 +43,33 @@ async function decodeAudioData(
   ctx: AudioContext,
   sampleRate: number,
   numChannels: number,
-): Promise<AudioBuffer> {
-  const dataInt16 = new Int16Array(data.buffer);
-  const frameCount = dataInt16.length / numChannels;
-  const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
-  for (let channel = 0; channel < numChannels; channel++) {
-    const channelData = buffer.getChannelData(channel);
-    for (let i = 0; i < frameCount; i++) {
-      channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
+): Promise<AudioBuffer | null> {
+  if (data.length === 0) return null;
+  try {
+    const dataInt16 = new Int16Array(data.buffer);
+    const frameCount = dataInt16.length / numChannels;
+    const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
+    for (let channel = 0; channel < numChannels; channel++) {
+      const channelData = buffer.getChannelData(channel);
+      for (let i = 0; i < frameCount; i++) {
+        channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
+      }
     }
+    return buffer;
+  } catch (e) {
+    console.error("Ses verisi ayrıştırma hatası:", e);
+    return null;
   }
-  return buffer;
 }
 
 const StudyView: React.FC<StudyViewProps> = ({ course, selectedUnit, onUnitChange }) => {
   const [summary, setSummary] = useState<StudySummary | null>(null);
-  const [mapData, setMapData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
   const [userNote, setUserNote] = useState("");
   const [isSavingNote, setIsSavingNote] = useState(false);
   const [uploadedKeys, setUploadedKeys] = useState<string[]>([]);
-  const [fontSize, setFontSize] = useState(1.25); // rem cinsinden varsayılan font boyutu
+  const [fontSize, setFontSize] = useState(1.25);
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
 
@@ -85,9 +97,6 @@ const StudyView: React.FC<StudyViewProps> = ({ course, selectedUnit, onUnitChang
       
       setSummary(sumData);
       setUserNote(noteData);
-      
-      const locations = await getHistoricalLocations(course.name, `${selectedUnit}. ünite: ${sumData.content.substring(0, 300)}`);
-      setMapData(locations);
     } catch (error) {
       console.error("Mütalaa hatası:", error);
     } finally {
@@ -114,6 +123,10 @@ const StudyView: React.FC<StudyViewProps> = ({ course, selectedUnit, onUnitChang
       const ctx = audioContextRef.current || new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
       if (!audioContextRef.current) audioContextRef.current = ctx;
       const audioBuffer = await decodeAudioData(decode(base64Audio), ctx, 24000, 1);
+      if (!audioBuffer) {
+        setIsPlaying(false);
+        return;
+      }
       const source = ctx.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(ctx.destination);
@@ -121,6 +134,7 @@ const StudyView: React.FC<StudyViewProps> = ({ course, selectedUnit, onUnitChang
       source.start();
       audioSourceRef.current = source;
     } catch (error) {
+      console.error("Dinleme hatası:", error);
       setIsPlaying(false);
     }
   };
@@ -167,7 +181,6 @@ const StudyView: React.FC<StudyViewProps> = ({ course, selectedUnit, onUnitChang
           <div className="bg-white/90 dark:bg-black/40 p-8 sm:p-12 rounded-[3rem] shadow-2xl border-x-8 border-altin/20 relative overflow-hidden rumi-border">
             <div className="absolute top-0 left-0 w-full h-4 bg-altin/50"></div>
             
-            {/* Dinamik Yakınlaştırma Kontrolleri */}
             <div className="absolute top-6 right-8 z-50 flex items-center gap-2">
               <button 
                 onClick={() => adjustFontSize(-0.1)}
