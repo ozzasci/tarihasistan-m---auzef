@@ -228,14 +228,30 @@ export const generateSpeech = async (text: string): Promise<string> => {
   } catch (err) { return handleAIError(err); }
 };
 
-export const generateQuiz = async (courseName: string): Promise<QuizQuestion[]> => {
+export const generateQuiz = async (context: string): Promise<QuizQuestion[]> => {
   const ai = getAI();
   if (!ai) throw new Error("AI başlatılamadı");
   try {
     const response = await ai.models.generateContent({
       model: DEFAULT_MODEL,
-      contents: `"${courseName}" hakkında 5 soruluk test.`,
-      config: { systemInstruction: ACADEMIC_SYSTEM_INSTRUCTION, responseMimeType: "application/json", responseSchema: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { question: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } }, correctAnswer: { type: Type.INTEGER }, explanation: { type: Type.STRING } } } } }
+      contents: `"${context}" konusu üzerine resmi AUZEF sınav standartlarında, akademik ve zorlayıcı 20 soru üret. Sınavda çıkabilecek kritik tarihlere ve terimlere yer ver.`,
+      config: {
+        systemInstruction: ACADEMIC_SYSTEM_INSTRUCTION,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              question: { type: Type.STRING },
+              options: { type: Type.ARRAY, items: { type: Type.STRING } },
+              correctAnswer: { type: Type.INTEGER },
+              explanation: { type: Type.STRING }
+            },
+            required: ["question", "options", "correctAnswer", "explanation"]
+          }
+        }
+      }
     });
     return safeJsonParse(response.text) || [];
   } catch (err) { return handleAIError(err); }

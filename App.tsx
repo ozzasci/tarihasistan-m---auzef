@@ -27,9 +27,10 @@ import CommunityView from './components/CommunityView';
 import WeeklyPlanner from './components/WeeklyPlanner';
 import VisionStudyView from './components/VisionStudyView';
 import LiveInterviewView from './components/LiveInterviewView';
+import ExamPracticeView from './components/ExamPracticeView';
 import { getCurrentUser, checkUnitExists } from './services/dbService';
 
-type ViewState = 'home' | 'course' | 'library' | 'achievements' | 'comparison' | 'profile' | 'settings' | 'community' | 'planner' | 'useful_links';
+type ViewState = 'home' | 'course' | 'library' | 'achievements' | 'comparison' | 'profile' | 'settings' | 'community' | 'planner' | 'useful_links' | 'exam_practice';
 type TabState = 'pdf' | 'study' | 'visual' | 'sadâ' | 'video' | 'geography' | 'genealogy' | 'flashcards' | 'interview' | 'quiz' | 'chat' | 'glossary';
 
 const App: React.FC = () => {
@@ -134,6 +135,10 @@ const App: React.FC = () => {
       return <UsefulLinksView onBack={() => setCurrentView('home')} />;
     }
 
+    if (currentView === 'exam_practice') {
+      return <ExamPracticeView onBack={() => setCurrentView('home')} />;
+    }
+
     if (currentView === 'achievements') {
       return (
         <div className="animate-in fade-in duration-500 pb-safe">
@@ -168,9 +173,9 @@ const App: React.FC = () => {
 
             <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mt-6 sm:mt-8">
               {[
+                { id: 'exam_practice', icon: '⚖️', label: 'Darülfünun Sınavı', color: 'border-rose-600 text-rose-600' },
                 { id: 'planner', icon: '📜', label: 'Haftalık Program', color: 'border-hunkar text-hunkar' },
                 { id: 'library', icon: '🏛️', label: 'Beytü\'l-Hikme', color: 'border-enderun text-enderun' },
-                { id: 'useful_links', icon: '🔗', label: 'Mecmua-i Link', color: 'border-altin text-altin' },
                 { id: 'community', icon: '🤝', label: 'Meclis-i İrfan', color: 'border-selcuk text-selcuk' },
                 { id: 'comparison', icon: '⚖️', label: 'Vaka-i Mütalaa', color: 'border-amber-700 text-amber-700' }
               ].map(item => (
