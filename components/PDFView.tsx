@@ -25,7 +25,6 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
   const [localPdfUrl, setLocalPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploadedKeys, setUploadedKeys] = useState<string[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Drive States
@@ -37,6 +36,8 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
   const [configError, setConfigError] = useState<{title: string, msg: string, detail?: string} | null>(null);
   const [showGuide, setShowGuide] = useState(false);
   const [driveSearchTerm, setDriveSearchTerm] = useState('auzef');
+
+  const currentOrigin = window.location.origin;
 
   const units = Array.from({ length: 14 }, (_, i) => ({
     number: i + 1,
@@ -54,7 +55,7 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
     }
     loadUnit(selectedUnit);
     refreshPDFStatus();
-    initDriveApi().catch((e) => console.warn("API Init gecikti:", e));
+    initDriveApi().catch(() => {});
   }, [course.id, selectedUnit]);
 
   const loadUnit = async (unitNum: number) => {
@@ -92,26 +93,24 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
       setDriveFiles(results);
       setShowConfig(false);
     } catch (error: any) {
-      console.error("Drive Arama Hatası:", error);
-      const errorMsg = error.result?.error?.message || error.message || "Bilinmeyen bağlantı hatası";
+      const errorMsg = error.result?.error?.message || error.message || "Bağlantı kesildi";
       
       if (error.message === "ACCESS_DENIED") {
         setConfigError({
           title: "İZİN VERİLMEDİ",
-          msg: "Google ekranında 'Dosyaları görme' kutucuğunu işaretlemediniz.",
-          detail: "Lütfen tekrar deneyin ve tüm izin kutucuklarını işaretleyin."
+          msg: "Google girişinde Drive kutucuğunu işaretlemediniz.",
+          detail: "Lütfen pencereyi kapatıp tekrar deneyin ve tüm kutuları işaretleyin."
         });
-      } else if (error.message === "CONFIG_MISSING" || errorMsg.includes("OAuth client")) {
+      } else if (errorMsg.includes("idpiframe_initialization_failed") || errorMsg.includes("origin_mismatch")) {
         setConfigError({
-          title: "CLIENT ID HATASI",
-          msg: "Girdiğiniz Client ID geçersiz veya Google tarafından henüz onaylanmadı.",
-          detail: "Console'da 'Authorized JavaScript Origins' kısmına mevcut URL'yi eklediğinizden emin olun."
+          title: "KÖKEN (ORIGIN) HATASI",
+          msg: "Google bu sitenin adresini tanımıyor.",
+          detail: `Google Cloud Console'da 'Authorized JavaScript Origins' kısmına şu adresi eklemelisiniz: ${currentOrigin}`
         });
-        setShowConfig(true);
       } else {
         setConfigError({
-          title: "BAĞLANTI HATASI",
-          msg: "Google Drive servislerine ulaşılamadı.",
+          title: "YAPILANDIRMA HATASI",
+          msg: "İstemci (Client) veya Köken hatası.",
           detail: errorMsg
         });
       }
@@ -121,19 +120,12 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
   };
 
   const saveConfigAndSearch = async () => {
-    setConfigError(null);
-    const cleanedId = tempClientId.trim();
-    if (!cleanedId) {
-      setConfigError({title: "EKSİK BİLGİ", msg: "Lütfen bir Client ID giriniz."});
-      return;
-    }
-    setStoredClientId(cleanedId);
+    setStoredClientId(tempClientId.trim());
     await executeDriveSearch(driveSearchTerm);
   };
 
   const handleDriveImport = async () => {
     setIsDriveModalOpen(true);
-    setConfigError(null);
     if (isDriveConfigured()) {
       setShowConfig(false);
       executeDriveSearch(driveSearchTerm);
@@ -150,9 +142,8 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
       loadUnit(selectedUnit);
       refreshPDFStatus();
       setIsDriveModalOpen(false);
-      if (onUploadSuccess) onUploadSuccess();
     } catch (error) {
-      alert("Hıfzetme hatası. Dosya indirilemedi.");
+      alert("Hıfzetme hatası.");
     } finally {
       setIsDriveSearching(false);
     }
@@ -178,16 +169,12 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
                   <button
                     key={u.number}
                     onClick={() => onUnitChange(u.number)}
-                    className={`p-3 rounded-xl font-display font-bold text-[10px] tracking-widest transition-all border-2 flex flex-col items-center justify-center gap-1 ${
-                      selectedUnit === u.number 
-                        ? 'bg-altin text-hunkar border-white' 
-                        : isUploaded 
-                          ? 'bg-white/10 text-white border-white/20 hover:bg-white/20' 
-                          : 'bg-black/20 text-white/40 border-transparent opacity-60'
+                    className={`p-3 rounded-xl font-display font-bold text-[10px] transition-all border-2 flex flex-col items-center justify-center gap-1 ${
+                      selectedUnit === u.number ? 'bg-altin text-hunkar border-white' : isUploaded ? 'bg-white/10 text-white' : 'bg-black/20 text-white/40 border-transparent opacity-60'
                     }`}
                   >
                     <span className="text-xs">{u.number}</span>
-                    <span className="opacity-60">{u.number === 1 ? 'MEBDE' : isUploaded ? 'HIFZ' : 'BOŞ'}</span>
+                    <span className="opacity-60">{isUploaded ? 'HIFZ' : 'BOŞ'}</span>
                   </button>
                 );
               })}
@@ -198,198 +185,111 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
       <div className="flex-1 space-y-6">
         <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] shadow-xl border border-slate-100 dark:border-slate-800">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
-            <div>
-              <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white">{selectedUnit}. Fasıl (Ünite)</h2>
-              <div className="flex items-center gap-2 mt-1">
-                 <span className={`w-2 h-2 rounded-full ${localPdfUrl ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
-                 <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                   {localPdfUrl ? 'Çevrimdışı Mahzende' : 'Yüklenmemiş'}
-                 </span>
-              </div>
-            </div>
-            
-            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="flex-1 sm:flex-none bg-hunkar text-altin border-2 border-altin px-6 py-3 rounded-2xl font-display font-bold text-[10px] hover:brightness-110 transition-all flex items-center justify-center gap-2 shadow-lg tracking-widest"
-              >
-                <span>📥</span> DOSYADAN YÜKLE
-              </button>
-              <button
-                onClick={handleDriveImport}
-                className="flex-1 sm:flex-none bg-white dark:bg-slate-800 text-slate-700 dark:text-altin border-2 border-slate-200 dark:border-altin/30 px-6 py-3 rounded-2xl font-display font-bold text-[10px] hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-lg tracking-widest"
-              >
-                <img src="https://www.gstatic.com/images/branding/product/2x/drive_48dp.png" className="w-4 h-4" alt="Drive" /> DRIVE'DAN AKTAR
-              </button>
+            <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white">{selectedUnit}. Fasıl (Ünite)</h2>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <button onClick={() => fileInputRef.current?.click()} className="flex-1 sm:flex-none bg-hunkar text-altin border-2 border-altin px-6 py-3 rounded-2xl font-display font-bold text-[10px]">📥 YÜKLE</button>
+              <button onClick={handleDriveImport} className="flex-1 sm:flex-none bg-white dark:bg-slate-800 text-slate-700 dark:text-altin border-2 border-slate-200 dark:border-altin/30 px-6 py-3 rounded-2xl font-display font-bold text-[10px]">☁️ DRIVE</button>
             </div>
             <input type="file" accept=".pdf" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
           </div>
 
           {loading ? (
-            <div className="aspect-[16/10] w-full flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-950 rounded-[2rem]">
+            <div className="aspect-video w-full flex items-center justify-center bg-slate-100 dark:bg-slate-950 rounded-[2rem]">
                <div className="w-12 h-12 border-4 border-hunkar border-t-transparent rounded-full animate-spin"></div>
             </div>
           ) : localPdfUrl ? (
-            <div className="aspect-[3/4] md:aspect-[16/10] w-full border-4 border-slate-50 dark:border-slate-800 rounded-[2rem] overflow-hidden bg-slate-200 dark:bg-slate-950 shadow-2xl relative">
-               <embed src={`${localPdfUrl}#page=${currentPage}`} type="application/pdf" className="w-full h-full" />
+            <div className="aspect-[3/4] md:aspect-video w-full border-4 border-slate-50 dark:border-slate-800 rounded-[2rem] overflow-hidden shadow-2xl">
+               <embed src={localPdfUrl} type="application/pdf" className="w-full h-full" />
             </div>
           ) : (
-            <div className="py-20 border-4 border-dashed border-slate-100 dark:border-slate-800 rounded-[3rem] flex flex-col items-center justify-center text-center bg-slate-50/50 dark:bg-slate-900/50 p-8">
-              <div className="text-7xl mb-6 grayscale opacity-30">📜</div>
-              <h3 className="text-xl font-display font-bold text-hunkar dark:text-altin uppercase">Başlangıç İçin Faslı Hıfzedin</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm mt-3 max-w-sm mx-auto mb-8 font-serif">
-                {selectedUnit}. Ünite kitabını dosya seçerek veya Google Drive hesabınızdan tarayarak hıfzedebilirsiniz.
-              </p>
-              <button 
-                onClick={handleDriveImport}
-                className="bg-hunkar text-altin px-10 py-4 rounded-full font-display font-black text-sm tracking-widest shadow-xl hover:brightness-110 transition-all border-2 border-altin flex items-center gap-3"
-              >
-                GOOGLE DRIVE'DA ARA 🔍
-              </button>
+            <div className="py-20 border-4 border-dashed border-slate-100 dark:border-slate-800 rounded-[3rem] text-center bg-slate-50/50 dark:bg-slate-900/50 p-8">
+              <div className="text-7xl mb-6 opacity-30">📜</div>
+              <h3 className="text-xl font-display font-bold text-hunkar dark:text-altin uppercase">Üniteyi Hıfzedin</h3>
+              <p className="text-slate-500 text-sm mt-3 max-w-sm mx-auto mb-8 font-serif italic">Kitabı yükleyerek mütalaaya başlayabilirsiniz.</p>
+              <button onClick={handleDriveImport} className="bg-hunkar text-altin px-10 py-4 rounded-full font-display font-black text-sm shadow-xl border-2 border-altin">DRIVE'DA ARA 🔍</button>
             </div>
           )}
         </div>
       </div>
 
-      {/* Google Drive Import Modal */}
       {isDriveModalOpen && (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[3rem] p-8 shadow-2xl animate-in zoom-in-95 overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[3rem] p-8 shadow-2xl flex flex-col max-h-[90vh]">
              <div className="flex items-center justify-between mb-6">
-               <div className="flex items-center gap-4">
-                 <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center shadow-lg border border-slate-100 dark:border-slate-700">
-                   <img src="https://www.gstatic.com/images/branding/product/2x/drive_48dp.png" className="w-8 h-8" alt="Drive" />
-                 </div>
-                 <div>
-                   <h3 className="text-xl font-display font-black text-slate-900 dark:text-white uppercase tracking-widest">Beytü'l-Hafıza</h3>
-                   <p className="text-xs text-slate-500 dark:text-slate-400 font-serif italic">Google Drive Entegrasyonu</p>
-                 </div>
-               </div>
-               <button onClick={() => setIsDriveModalOpen(false)} className="text-slate-400 hover:text-rose-500 transition-colors">✕</button>
+               <h3 className="text-xl font-display font-black text-slate-900 dark:text-white uppercase">Beytü'l-Hafıza</h3>
+               <button onClick={() => setIsDriveModalOpen(false)} className="text-slate-400">✕</button>
              </div>
 
              {showConfig ? (
-               <div className="flex-1 flex flex-col items-center justify-start text-center p-2 space-y-6 overflow-y-auto no-scrollbar">
-                 <div className="text-5xl mt-4">🔐</div>
-                 {!showGuide ? (
-                   <>
-                     <div className="px-4">
-                       <h4 className="font-display font-bold text-slate-800 dark:text-white text-lg">Erişim Yetkisi Gerekiyor</h4>
-                       <p className="text-sm text-slate-500 dark:text-slate-400 font-serif mt-2 max-w-sm mx-auto">
-                         Google Drive'daki PDF'lerinizi listeleyebilmek için yetki almamız lazım.
-                       </p>
-                       <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-2xl border border-amber-200 mt-4 text-[10px] font-bold text-amber-700 dark:text-amber-300">
-                         ⚠️ ÖNEMLİ: Giriş ekranında "Tüm dosyalarınızı görme" kutucuğunu mutlaka işaretleyin!
-                       </div>
-                     </div>
-                     <div className="w-full max-w-sm space-y-3 px-4">
-                       <input 
-                        type="text" 
-                        value={tempClientId}
-                        onChange={(e) => setTempClientId(e.target.value)}
-                        placeholder="OAuth 2.0 Client ID..."
-                        className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-4 text-xs font-mono outline-none focus:border-indigo-500 transition-all dark:text-white shadow-inner"
-                       />
-                       {configError && (
-                        <div className="bg-rose-50 dark:bg-rose-950/30 text-rose-600 p-4 rounded-2xl text-[10px] font-bold text-left border border-rose-200 shadow-lg">
-                           <p className="font-black uppercase mb-1">{configError.title}</p>
-                           <p className="opacity-80 mb-2">{configError.msg}</p>
-                           {configError.detail && <p className="text-[9px] font-mono bg-white/50 p-2 rounded italic">{configError.detail}</p>}
-                        </div>
-                       )}
-                       <button onClick={saveConfigAndSearch} disabled={isDriveSearching} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-display font-black text-[10px] tracking-widest shadow-xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-2">
-                         {isDriveSearching && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
-                         DRIVE'A BAĞLAN VE ARA →
-                       </button>
-                       <button onClick={() => setShowGuide(true)} className="text-[9px] text-slate-400 uppercase font-black tracking-widest">Kurulum Rehberi</button>
-                     </div>
-                   </>
-                 ) : (
-                   <div className="w-full text-left space-y-6 animate-in slide-in-from-right-4 p-4">
-                      <div className="bg-indigo-50 dark:bg-slate-800 p-6 rounded-[2rem] border border-indigo-100 dark:border-slate-700">
-                        <h5 className="font-display font-black text-indigo-700 dark:text-indigo-400 text-xs uppercase mb-4">GÜVENLİK AYARLARI:</h5>
-                        <ul className="text-xs space-y-4 font-serif italic text-slate-600 dark:text-slate-300 list-disc pl-4">
-                          <li>Google Console > APIs > Credentials > <b>OAuth 2.0 Client IDs</b> kısmındaki kaydınıza gidin.</li>
-                          <li><b>Authorized JavaScript origins</b> kısmına bu sitenin URL'sini ekleyin.</li>
-                          <li><b>Test Users</b> kısmına kendi mail adresinizi eklediğinizden emin olun.</li>
-                        </ul>
-                        <button onClick={() => setShowGuide(false)} className="mt-6 w-full py-4 bg-white dark:bg-slate-700 text-indigo-600 dark:text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-indigo-100 dark:border-slate-600 shadow-md">← Ayarlara Dön</button>
-                      </div>
-                   </div>
-                 )}
+               <div className="flex-1 space-y-6 overflow-y-auto pr-2">
+                 <div className="text-center">
+                    <div className="text-5xl mb-4">🔐</div>
+                    <h4 className="font-display font-bold text-lg">Google Drive Yapılandırması</h4>
+                 </div>
+                 
+                 <div className="bg-amber-50 dark:bg-slate-800 p-6 rounded-[2rem] border border-amber-200 dark:border-slate-700 space-y-4">
+                    <p className="text-xs font-serif font-bold text-amber-800 dark:text-amber-400">⚠️ ÇÖZÜM REHBERİ:</p>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                      Google Cloud Console'da <b>'VAKANÜVİS'</b> projesine gidin ve <b>'Authorized JavaScript Origins'</b> kısmına aşağıdaki adresi tam olarak ekleyin:
+                    </p>
+                    <div className="flex items-center gap-2 bg-white dark:bg-slate-900 p-3 rounded-xl border border-amber-100 dark:border-slate-600">
+                       <code className="text-[10px] font-mono text-indigo-600 break-all flex-1">{currentOrigin}</code>
+                       <button onClick={() => navigator.clipboard.writeText(currentOrigin)} className="text-[10px] bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">KOPYALA</button>
+                    </div>
+                 </div>
+
+                 <div className="space-y-3">
+                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Google Client ID (İstemci Kimliği)</label>
+                   <input 
+                    type="text" 
+                    value={tempClientId}
+                    onChange={(e) => setTempClientId(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 rounded-2xl px-5 py-4 text-xs font-mono outline-none focus:border-indigo-500"
+                   />
+                   {configError && (
+                    <div className="bg-rose-50 p-4 rounded-2xl border border-rose-200">
+                       <p className="text-[10px] font-black text-rose-600 uppercase mb-1">{configError.title}</p>
+                       <p className="text-[10px] text-rose-500 italic">{configError.detail}</p>
+                    </div>
+                   )}
+                   <button onClick={saveConfigAndSearch} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-display font-black text-[10px] shadow-xl">AYARLARI KAYDET VE BAĞLAN →</button>
+                 </div>
                </div>
              ) : (
                <>
-                 <div className="px-4 mb-6">
-                    <div className="relative group">
-                      <input 
-                        type="text"
-                        value={driveSearchTerm}
-                        onChange={(e) => setDriveSearchTerm(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && executeDriveSearch(driveSearchTerm)}
-                        placeholder="PDF ismi ara... (Boş bırakıp ARA'ya basın)"
-                        className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-indigo-100 dark:border-slate-700 rounded-2xl px-12 py-4 text-xs font-serif italic outline-none focus:border-indigo-500 transition-all dark:text-white"
-                      />
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg">🔍</span>
-                      <button 
-                        onClick={() => executeDriveSearch(driveSearchTerm)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 bg-indigo-600 text-white px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest"
-                      >
-                        ARA
-                      </button>
-                    </div>
-                    {configError && (
-                      <div className="mt-2 bg-rose-50 text-rose-600 p-3 rounded-xl text-[9px] font-bold">
-                        ⚠️ {configError.msg} - {configError.detail}
-                      </div>
-                    )}
+                 <div className="relative mb-6">
+                    <input 
+                      type="text"
+                      value={driveSearchTerm}
+                      onChange={(e) => setDriveSearchTerm(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && executeDriveSearch(driveSearchTerm)}
+                      placeholder="PDF ismi ara..."
+                      className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-indigo-100 rounded-2xl px-12 py-4 text-xs font-serif italic outline-none focus:border-indigo-500"
+                    />
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg">🔍</span>
                  </div>
 
-                 <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-4 no-scrollbar min-h-[300px]">
+                 <div className="flex-1 overflow-y-auto pr-2 space-y-4 min-h-[300px]">
                     {isDriveSearching ? (
                       <div className="py-20 text-center">
-                        <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                        <p className="text-slate-500 font-serif italic">Drive mahzeni taranıyor...</p>
+                        <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                        <p className="text-slate-500 font-serif italic">Mahzen taranıyor...</p>
                       </div>
                     ) : driveFiles.length === 0 ? (
-                      <div className="py-20 text-center flex flex-col items-center">
-                        <span className="text-5xl mb-4 grayscale">🔎</span>
-                        <p className="text-slate-500 font-serif italic mb-2">Henüz PDF bulunamadı.</p>
-                        <p className="text-[10px] text-slate-400 max-w-xs mx-auto mb-6">
-                          Drive'ınızda PDF olduğundan ve girişte tüm izinleri verdiğinizden emin olun.
-                        </p>
-                        <button 
-                          onClick={() => { setDriveSearchTerm(''); executeDriveSearch(''); }}
-                          className="mt-4 bg-indigo-600 text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg"
-                        >
-                          TÜMÜNÜ LİSTELEMEYİ DENE
-                        </button>
-                      </div>
+                      <div className="py-20 text-center text-slate-400 italic font-serif">Dosya bulunamadı.</div>
                     ) : (
-                      driveFiles.map((file, i) => (
+                      driveFiles.map((file) => (
                         <div key={file.id} className="bg-slate-50 dark:bg-slate-800 p-5 rounded-3xl border border-slate-100 dark:border-slate-700 flex items-center justify-between group hover:border-indigo-300 transition-all">
-                           <div className="flex-1 min-w-0 pr-4 flex items-center gap-3">
-                             <div className="w-10 h-10 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center text-xl shrink-0">📄</div>
-                             <div className="truncate">
-                               <h4 className="font-bold text-slate-800 dark:text-white truncate text-sm mb-1">{file.name}</h4>
-                               <div className="flex items-center gap-2">
-                                  <span className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">{formatSize(file.size)}</span>
-                                  <span className="text-[9px] text-slate-400">• {new Date(file.modifiedTime).toLocaleDateString('tr-TR')}</span>
-                               </div>
-                             </div>
+                           <div className="truncate pr-4">
+                             <h4 className="font-bold text-slate-800 dark:text-white truncate text-sm">{file.name}</h4>
+                             <span className="text-[9px] font-black text-indigo-500 uppercase">{formatSize(file.size)}</span>
                            </div>
-                           <button onClick={() => importFromDrive(file)} className="bg-hunkar text-altin px-6 py-2.5 rounded-xl font-display font-bold text-[10px] tracking-widest shadow-md hover:brightness-125 transition-all whitespace-nowrap">HIFZET 🖋️</button>
+                           <button onClick={() => importFromDrive(file)} className="bg-hunkar text-altin px-6 py-2.5 rounded-xl font-display font-bold text-[10px] shadow-md">HIFZET 🖋️</button>
                         </div>
                       ))
                     )}
                  </div>
-                 <div className="p-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center shrink-0">
-                    <button onClick={() => setShowConfig(true)} className="text-[9px] font-black text-slate-400 uppercase tracking-widest hover:text-indigo-500">⚙️ Yapılandırma</button>
-                    <div className="flex items-center gap-1">
-                       <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
-                       <span className="text-[9px] font-black text-emerald-500 uppercase">Sistem Aktif</span>
-                    </div>
-                 </div>
+                 <button onClick={() => setShowConfig(true)} className="mt-4 text-[9px] font-black text-slate-400 uppercase tracking-widest hover:text-indigo-500">⚙️ YAPILANDIRMAYI DEĞİŞTİR</button>
                </>
              )}
           </div>
