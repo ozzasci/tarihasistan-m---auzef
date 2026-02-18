@@ -40,6 +40,7 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewState>('home');
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [hasPdf, setHasPdf] = useState(false);
+  const [showMahzen, setShowMahzen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     return localStorage.getItem('theme') as 'light' | 'dark' || 'light';
   });
@@ -89,6 +90,24 @@ const App: React.FC = () => {
   if (!user) {
     return <AuthView onLoginSuccess={(loggedInUser) => setUser(loggedInUser)} />;
   }
+
+  const primaryTabs = [
+    { id: 'pdf', label: 'Kitap', icon: '📄' },
+    { id: 'study', label: 'Hülasa', icon: '📜' },
+    { id: 'sadâ', label: 'Sadâ', icon: '🎙️' },
+    { id: 'visual', label: 'Görsel', icon: '📸' },
+    { id: 'quiz', label: 'İmtihan', icon: '📝' }
+  ];
+
+  const secondaryTabs = [
+    { id: 'video', label: 'Video Ders', icon: '📽️', desc: 'Resmi AUZEF ders kayıtları.' },
+    { id: 'geography', label: 'Tarih Atlası', icon: '🌍', desc: 'Mühim mevkiler ve haritalar.' },
+    { id: 'genealogy', label: 'Şecere-i Atik', icon: '🌳', desc: 'Hanedan ve hükümdar şecereleri.' },
+    { id: 'flashcards', label: 'Ezber Kartları', icon: '🗂️', desc: 'Aktif hatırlatma egzersizleri.' },
+    { id: 'interview', label: 'Zaman Yolcusu', icon: '👤', desc: 'Tarihi şahsiyetlerle mülakat.' },
+    { id: 'chat', label: 'AI Müşavir', icon: '🤖', desc: 'Akademik soru-cevap asistanı.' },
+    { id: 'glossary', label: 'Lügatçe', icon: '📖', desc: 'Tarihsel terminoloji sözlüğü.' }
+  ];
 
   const renderContent = () => {
     if (currentView === 'library') {
@@ -185,7 +204,7 @@ const App: React.FC = () => {
       if (activeTab === 'visual') return <VisionStudyView />;
       if (activeTab === 'sadâ') return <LiveInterviewView course={selectedCourse} />;
 
-      if (!hasPdf && activeTab !== 'video') {
+      if (!hasPdf && !['video', 'sadâ', 'visual'].includes(activeTab)) {
         return (
           <div className="py-20 flex flex-col items-center justify-center text-center animate-in fade-in duration-500">
             <div className="w-24 h-24 bg-hunkar/10 text-hunkar rounded-full flex items-center justify-center text-5xl mb-6 border-4 border-hunkar/20 border-dashed">🔒</div>
@@ -241,36 +260,72 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white/40 dark:bg-black/20 backdrop-blur-md p-2 rounded-full border-2 border-altin/30 shadow-xl mb-10 sticky top-[110px] sm:top-[125px] z-40 overflow-x-auto no-scrollbar overflow-touch">
-          <div className="flex min-w-max gap-1">
-            {[
-              { id: 'pdf', label: 'Kitap', icon: '📄' },
-              { id: 'study', label: 'Hülasa', icon: '📜' },
-              { id: 'visual', label: 'Görsel', icon: '📸' },
-              { id: 'sadâ', label: 'Sadâ', icon: '🎙️' },
-              { id: 'video', label: 'Video', icon: '📽️' },
-              { id: 'geography', label: 'Harita', icon: '🌍' },
-              { id: 'genealogy', label: 'Şecere', icon: '🌳' },
-              { id: 'flashcards', label: 'Ezber', icon: '🗂️' },
-              { id: 'interview', label: 'Mülakat', icon: '👤' },
-              { id: 'quiz', label: 'İmtihan', icon: '📝' },
-              { id: 'chat', label: 'Müşavir', icon: '🤖' },
-              { id: 'glossary', label: 'Lügat', icon: '📖' }
-            ].map((tab) => (
+        {/* Yeni Hiyerarşik Tab Çubuğu */}
+        <div className="bg-white/40 dark:bg-black/20 backdrop-blur-md p-2 rounded-full border-2 border-altin/30 shadow-xl mb-10 sticky top-[110px] sm:top-[125px] z-40 flex items-center justify-between">
+          <div className="flex items-center gap-1 flex-1">
+            {primaryTabs.map((tab) => (
               <button 
                 key={tab.id}
-                id={`tab-${tab.id}`}
-                onClick={() => {
-                    setActiveTab(tab.id as TabState);
-                }}
-                className={`px-5 sm:px-6 py-3 rounded-full font-display font-bold text-[10px] sm:text-[11px] tracking-widest transition-all whitespace-nowrap flex items-center gap-2 ${activeTab === tab.id ? 'bg-hunkar text-white shadow-xl scale-105 border border-altin z-10' : 'text-hunkar dark:text-altin hover:bg-white/50'}`}
+                onClick={() => { setActiveTab(tab.id as TabState); setShowMahzen(false); }}
+                className={`flex-1 min-w-[60px] py-3 rounded-full font-display font-bold text-[10px] tracking-widest transition-all flex flex-col items-center gap-1 ${activeTab === tab.id ? 'bg-hunkar text-white shadow-xl scale-105 border border-altin z-10' : 'text-hunkar dark:text-altin hover:bg-white/50'}`}
               >
-                <span>{tab.icon}</span> 
-                <span>{tab.label}</span>
+                <span className="text-base">{tab.icon}</span> 
+                <span className="hidden sm:block">{tab.label}</span>
               </button>
             ))}
           </div>
+          
+          <button 
+            onClick={() => setShowMahzen(!showMahzen)}
+            className={`ml-2 w-14 h-14 rounded-full flex flex-col items-center justify-center transition-all ${showMahzen ? 'bg-altin text-hunkar rotate-90' : 'bg-hunkar text-altin'} shadow-xl border-2 border-altin active:scale-95`}
+          >
+            <span className="text-xl">⚙️</span>
+          </button>
         </div>
+
+        {/* Mahzen Menüsü Overlay */}
+        {showMahzen && (
+          <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm animate-in fade-in duration-300 flex items-end sm:items-center justify-center p-4" onClick={() => setShowMahzen(false)}>
+            <div 
+              className="bg-parshmen dark:bg-slate-900 w-full max-w-lg rounded-[3rem] border-4 border-altin shadow-2xl overflow-hidden animate-in slide-in-from-bottom-8 duration-500"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="bg-hunkar p-6 text-center border-b-4 border-altin">
+                <h3 className="text-xl font-display font-black text-altin tracking-[0.3em] uppercase">Mahzen-i Fünun</h3>
+                <p className="text-[10px] text-orange-50 font-serif italic mt-1 opacity-60 uppercase tracking-widest">Sair Mütalaa ve Tedrisat Araçları</p>
+              </div>
+              
+              <div className="p-6 grid grid-cols-1 gap-3 max-h-[60vh] overflow-y-auto no-scrollbar">
+                {secondaryTabs.map(tab => (
+                  <button 
+                    key={tab.id}
+                    onClick={() => { setActiveTab(tab.id as TabState); setShowMahzen(false); }}
+                    className={`flex items-center gap-5 p-5 rounded-2xl border-2 transition-all group ${activeTab === tab.id ? 'bg-hunkar border-altin' : 'bg-white dark:bg-slate-800 border-altin/10 hover:border-altin/50'}`}
+                  >
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-inner ${activeTab === tab.id ? 'bg-altin/20' : 'bg-parshmen dark:bg-slate-700'}`}>
+                      {tab.icon}
+                    </div>
+                    <div className="text-left">
+                      <div className={`font-display font-bold text-xs uppercase tracking-widest ${activeTab === tab.id ? 'text-altin' : 'text-hunkar dark:text-altin'}`}>
+                        {tab.label}
+                      </div>
+                      <div className={`text-[10px] font-serif italic ${activeTab === tab.id ? 'text-orange-50/70' : 'text-slate-500'}`}>
+                        {tab.desc}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+              
+              <button 
+                onClick={() => setShowMahzen(false)}
+                className="w-full bg-hunkar/5 py-4 text-hunkar dark:text-altin font-display font-bold text-[10px] uppercase tracking-widest border-t border-altin/10 hover:bg-altin/10 transition-colors"
+              >
+                Divanı Kapat
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
           {renderTabContent()}
