@@ -340,6 +340,12 @@ const App: React.FC = () => {
     );
   };
 
+  const handleSocialClick = (url: string) => {
+    setShowSocialMenu(false);
+    // Mobil tarayıcılarda yeni sekme açılması için en güvenli yol
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <div className="min-h-screen pb-12 transition-colors duration-500">
       <nav className="bg-white/60 dark:bg-black/40 backdrop-blur-lg border-b-4 border-altin py-4 sm:py-6 px-4 sm:px-8 sticky top-0 z-50 shadow-lg pt-safe">
@@ -357,76 +363,65 @@ const App: React.FC = () => {
               B
             </button>
 
-            {/* Sosyal Medya Dropdown Menü - z-index 100 üstü yapıldı */}
+            {/* Sosyal Medya Dropdown Menü - Portal mantığı ve z-index 1000 yapıldı */}
             {showSocialMenu && (
-              <>
+              <div className="fixed inset-0 z-[1000] flex items-start justify-end p-4 pointer-events-none">
                 <div 
-                  className="fixed inset-0 z-[100] bg-black/10" 
+                  className="fixed inset-0 bg-black/10 backdrop-blur-[2px] pointer-events-auto" 
                   onClick={() => setShowSocialMenu(false)}
                 ></div>
+                
                 <div 
-                  className="absolute top-14 right-0 w-56 bg-parshmen dark:bg-slate-900 border-4 border-altin rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-in slide-in-from-top-4 duration-300 z-[120] overflow-hidden"
+                  className="absolute top-16 right-4 sm:right-8 w-60 bg-parshmen dark:bg-slate-900 border-4 border-altin rounded-[2rem] shadow-[0_25px_60px_rgba(0,0,0,0.6)] animate-in slide-in-from-top-4 duration-300 overflow-hidden pointer-events-auto"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="bg-hunkar py-3 px-4 text-center border-b-2 border-altin">
+                  <div className="bg-hunkar py-4 px-4 text-center border-b-2 border-altin">
                     <span className="text-[10px] font-display font-black text-altin uppercase tracking-[0.3em]">Bab-ı İletişim</span>
                   </div>
                   <div className="p-3 space-y-2">
-                    <a 
-                      href="https://wa.me/905309082276" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      onClick={() => setShowSocialMenu(false)}
-                      className="flex items-center gap-4 p-4 hover:bg-emerald-500 hover:text-white dark:hover:bg-emerald-600 rounded-2xl transition-all group border-2 border-transparent hover:border-altin/30"
+                    <button 
+                      onClick={() => handleSocialClick("https://wa.me/905309082276")}
+                      className="w-full flex items-center gap-4 p-4 bg-emerald-500 text-white rounded-2xl transition-all group border-2 border-transparent hover:border-altin shadow-md active:scale-95"
                     >
-                      <span className="text-2xl group-hover:scale-110 transition-transform">💬</span>
-                      <div className="flex flex-col">
+                      <span className="text-2xl">💬</span>
+                      <div className="flex flex-col items-start">
                         <span className="text-[10px] font-display font-black uppercase tracking-widest">WhatsApp</span>
-                        <span className="text-[8px] font-serif italic opacity-70">Destek & Ulak Hattı</span>
+                        <span className="text-[8px] font-serif italic opacity-80">Destek & Ulak Hattı</span>
                       </div>
-                    </a>
-                    <a 
-                      href="https://t.me/VakanuvisApp" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      onClick={() => setShowSocialMenu(false)}
-                      className="flex items-center gap-4 p-4 hover:bg-sky-500 hover:text-white dark:hover:bg-sky-600 rounded-2xl transition-all group border-2 border-transparent hover:border-altin/30"
+                    </button>
+                    <button 
+                      onClick={() => handleSocialClick("https://t.me/VakanuvisApp")}
+                      className="w-full flex items-center gap-4 p-4 bg-sky-500 text-white rounded-2xl transition-all group border-2 border-transparent hover:border-altin shadow-md active:scale-95"
                     >
-                      <span className="text-2xl group-hover:scale-110 transition-transform">✈️</span>
-                      <div className="flex flex-col">
+                      <span className="text-2xl">✈️</span>
+                      <div className="flex flex-col items-start">
                         <span className="text-[10px] font-display font-black uppercase tracking-widest">Telegram</span>
-                        <span className="text-[8px] font-serif italic opacity-70">İlim Meclisi Kanalı</span>
+                        <span className="text-[8px] font-serif italic opacity-80">İlim Meclisi Kanalı</span>
                       </div>
-                    </a>
-                    <a 
-                      href="https://instagram.com" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      onClick={() => setShowSocialMenu(false)}
-                      className="flex items-center gap-4 p-4 hover:bg-gradient-to-tr hover:from-orange-500 hover:to-purple-600 hover:text-white rounded-2xl transition-all group border-2 border-transparent hover:border-altin/30"
+                    </button>
+                    <button 
+                      onClick={() => handleSocialClick("https://instagram.com")}
+                      className="w-full flex items-center gap-4 p-4 bg-gradient-to-tr from-orange-500 to-purple-600 text-white rounded-2xl transition-all group border-2 border-transparent hover:border-altin shadow-md active:scale-95"
                     >
-                      <span className="text-2xl group-hover:scale-110 transition-transform">📸</span>
-                      <div className="flex flex-col">
+                      <span className="text-2xl">📸</span>
+                      <div className="flex flex-col items-start">
                         <span className="text-[10px] font-display font-black uppercase tracking-widest">Instagram</span>
-                        <span className="text-[8px] font-serif italic opacity-70">Şahsi Mütalaa Akışı</span>
+                        <span className="text-[8px] font-serif italic opacity-80">Şahsi Mütalaa Akışı</span>
                       </div>
-                    </a>
-                    <a 
-                      href="https://youtube.com/@AuzefYoutube" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      onClick={() => setShowSocialMenu(false)}
-                      className="flex items-center gap-4 p-4 hover:bg-red-600 hover:text-white rounded-2xl transition-all group border-2 border-transparent hover:border-altin/30"
+                    </button>
+                    <button 
+                      onClick={() => handleSocialClick("https://youtube.com/@AuzefYoutube")}
+                      className="w-full flex items-center gap-4 p-4 bg-red-600 text-white rounded-2xl transition-all group border-2 border-transparent hover:border-altin shadow-md active:scale-95"
                     >
-                      <span className="text-2xl group-hover:scale-110 transition-transform">📽️</span>
-                      <div className="flex flex-col">
+                      <span className="text-2xl">📽️</span>
+                      <div className="flex flex-col items-start">
                         <span className="text-[10px] font-display font-black uppercase tracking-widest">YouTube</span>
-                        <span className="text-[8px] font-serif italic opacity-70">Ders-i Saadet Kayıtları</span>
+                        <span className="text-[8px] font-serif italic opacity-80">Ders-i Saadet Kayıtları</span>
                       </div>
-                    </a>
+                    </button>
                   </div>
                 </div>
-              </>
+              </div>
             )}
 
             <button 
