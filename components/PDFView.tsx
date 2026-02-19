@@ -139,7 +139,7 @@ const PDFView: React.FC<PDFViewProps> = ({ course, selectedUnit, onUnitChange, o
                     {driveError}
                   </p>
                   <div className="mt-6 pt-4 border-t border-rose-200/30 text-[10px] text-slate-500 font-sans uppercase font-bold tracking-widest">
-                    REHBER: Cloud Console > Credentials > JavaScript Origins
+                    REHBER: Cloud Console {'>'} Credentials {'>'} JavaScript Origins
                   </div>
                 </div>
               ) : driveFiles.length === 0 && !isDriveLoading ? (

@@ -39,6 +39,7 @@ const App: React.FC = () => {
   const [selectedUnit, setSelectedUnit] = useState(1);
   const [activeTab, setActiveTab] = useState<TabState>('pdf');
   const [currentView, setCurrentView] = useState<ViewState>('home');
+  // isAppLoading: Uygulamanın başlangıç verilerini (kullanıcı oturumu vb.) yükleyip yüklemediğini takip eder.
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [hasPdf, setHasPdf] = useState(false);
   const [showMahzen, setShowMahzen] = useState(false);

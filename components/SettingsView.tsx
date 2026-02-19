@@ -107,9 +107,9 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack, theme, onToggleThem
                {showDevNotes && (
                  <div className="mt-4 pt-4 border-t border-altin/20 space-y-4 animate-in slide-in-from-top-2">
                     <p className="text-[10px] leading-relaxed">
-                      1. Google Cloud Console > OAuth Consent Screen > <b>"Publish App"</b> deyin.<br/>
+                      1. Google Cloud Console {'>'} OAuth Consent Screen {'>'} <b>"Publish App"</b> deyin.<br/>
                       2. Bu sayede manuel mail eklemenize gerek kalmaz.<br/>
-                      3. Google onay verene kadar kullanıcılar "Gelişmiş > Yine de devam et" diyerek giriş yapabilir.
+                      3. Google onay verene kadar kullanıcılar "Gelişmiş {'>'} Yine de devam et" diyerek giriş yapabilir.
                     </p>
                  </div>
                )}
