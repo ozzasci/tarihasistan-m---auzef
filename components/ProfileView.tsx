@@ -123,29 +123,29 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdate, onLogout, onB
             </div>
           </div>
 
-          <div className="bg-amber-50 dark:bg-amber-950/20 p-8 rounded-[3rem] border border-amber-100 dark:border-amber-900 shadow-sm relative overflow-hidden">
-            <h3 className="text-xl font-serif font-bold text-amber-900 dark:text-amber-200 mb-6 flex items-center gap-3">
-              <span className="text-2xl">📅</span> AUZEF Bahar Dönemi Sınav Takvimi
+          <div className="bg-hunkar text-altin p-8 rounded-[3rem] border-4 border-altin shadow-2xl relative overflow-hidden">
+            <h3 className="text-xl font-display font-black mb-6 flex items-center gap-3">
+              <span className="text-2xl">📜</span> Müverrih'in Tedrisat Tavsiyeleri
             </h3>
             <div className="space-y-4 relative z-10">
-              <div className="flex items-center justify-between p-4 bg-white/60 dark:bg-slate-900/40 rounded-2xl border border-amber-200/50 dark:border-amber-900/50">
-                <span className="text-sm font-bold text-amber-900 dark:text-amber-300">Bahar Dönemi Ara Sınav (Vize)</span>
-                <span className="text-xs font-black text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 px-3 py-1 rounded-full whitespace-nowrap">02-03 Mayıs 2026</span>
+              <div className="p-4 bg-white/10 rounded-2xl border border-altin/20">
+                <h4 className="text-xs font-black uppercase tracking-widest mb-1">1. Usul-i Mütalaa</h4>
+                <p className="text-[10px] font-serif italic opacity-80">Fasıl metnini okumadan önce "Hülasa" kısmına göz atarak ana iskeleti kavrayın.</p>
               </div>
-              <div className="flex items-center justify-between p-4 bg-white/60 dark:bg-slate-900/40 rounded-2xl border border-amber-200/50 dark:border-amber-900/50">
-                <span className="text-sm font-bold text-amber-900 dark:text-amber-300">Bahar Dönemi Final (Bitirme)</span>
-                <span className="text-xs font-black text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 px-3 py-1 rounded-full whitespace-nowrap">20-21 Haziran 2026</span>
+              <div className="p-4 bg-white/10 rounded-2xl border border-altin/20">
+                <h4 className="text-xs font-black uppercase tracking-widest mb-1">2. Hıfz-ı Kelimat</h4>
+                <p className="text-[10px] font-serif italic opacity-80">Akademik terminoloji için "Lügatçe"yi her gün 5 dakika mütalaa edin.</p>
               </div>
-              <div className="flex items-center justify-between p-4 bg-white/60 dark:bg-slate-900/40 rounded-2xl border border-amber-200/50 dark:border-amber-900/50">
-                <span className="text-sm font-bold text-amber-900 dark:text-amber-300">Bahar Dönemi Bütünleme Sınavı</span>
-                <span className="text-xs font-black text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 px-3 py-1 rounded-full whitespace-nowrap">18-19 Temmuz 2026</span>
+              <div className="p-4 bg-white/10 rounded-2xl border border-altin/20">
+                <h4 className="text-xs font-black uppercase tracking-widest mb-1">3. Vaka-i Oyun</h4>
+                <p className="text-[10px] font-serif italic opacity-80">Zihniniz yorulduğunda "Darü'l-Eğlence"ye uğrayarak bilgilerinizi tazeleyin.</p>
               </div>
-              <div className="flex items-center justify-between p-4 bg-white/60 dark:bg-slate-900/40 rounded-2xl border border-amber-200/50 dark:border-amber-900/50">
-                <span className="text-sm font-bold text-amber-900 dark:text-amber-300">Mezuniyet Üç Ders Sınavı</span>
-                <span className="text-xs font-black text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 px-3 py-1 rounded-full whitespace-nowrap">23 Ağustos 2026</span>
+              <div className="p-4 bg-white/10 rounded-2xl border border-altin/20">
+                <h4 className="text-xs font-black uppercase tracking-widest mb-1">4. Keşf-i Sual</h4>
+                <p className="text-[10px] font-serif italic opacity-80">Sınavdan bir hafta önce "Keşf-i Sual" tahminlerini mutlaka inceleyin.</p>
               </div>
             </div>
-            <div className="absolute right-[-20px] bottom-[-20px] opacity-10 text-[140px] rotate-12">🗓️</div>
+            <div className="absolute right-[-20px] bottom-[-20px] opacity-10 text-[140px] rotate-12">🖋️</div>
           </div>
         </div>
       </div>

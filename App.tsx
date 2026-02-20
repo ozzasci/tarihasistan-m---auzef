@@ -462,7 +462,14 @@ const App: React.FC = () => {
           </div>
         </div>
       </nav>
-      <NewsTicker /> 
+      <NewsTicker onNavigate={(tab) => {
+        if (selectedCourse) {
+          setActiveTab(tab as TabState);
+          setCurrentView('course');
+        } else {
+          alert("Lütfen önce bir ders seçiniz.");
+        }
+      }} /> 
       <main className="max-w-5xl mx-auto">{renderContent()}</main>
     </div>
   );
