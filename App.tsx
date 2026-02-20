@@ -28,9 +28,10 @@ import WeeklyPlanner from './components/WeeklyPlanner';
 import VisionStudyView from './components/VisionStudyView';
 import LiveInterviewView from './components/LiveInterviewView';
 import ExamPracticeView from './components/ExamPracticeView';
+import FeedbackView from './components/FeedbackView';
 import { getCurrentUser, checkUnitExists } from './services/dbService';
 
-type ViewState = 'home' | 'course' | 'library' | 'achievements' | 'comparison' | 'profile' | 'settings' | 'community' | 'planner' | 'useful_links' | 'exam_practice';
+type ViewState = 'home' | 'course' | 'library' | 'achievements' | 'comparison' | 'profile' | 'settings' | 'community' | 'planner' | 'useful_links' | 'exam_practice' | 'feedback';
 type TabState = 'pdf' | 'study' | 'visual' | 'sadâ' | 'video' | 'geography' | 'genealogy' | 'flashcards' | 'interview' | 'quiz' | 'chat' | 'glossary';
 
 const App: React.FC = () => {
@@ -141,6 +142,10 @@ const App: React.FC = () => {
       return <ExamPracticeView onBack={() => setCurrentView('home')} />;
     }
 
+    if (currentView === 'feedback') {
+      return <FeedbackView onBack={() => setCurrentView('home')} />;
+    }
+
     if (currentView === 'achievements') {
       return (
         <div className="animate-in fade-in duration-500 pb-safe">
@@ -179,7 +184,8 @@ const App: React.FC = () => {
                 { id: 'planner', icon: '📜', label: 'Haftalık Program', color: 'border-hunkar text-hunkar' },
                 { id: 'library', icon: '🏛️', label: 'Beytü\'l-Hikme', color: 'border-enderun text-enderun' },
                 { id: 'community', icon: '🤝', label: 'Meclis-i İrfan', color: 'border-selcuk text-selcuk' },
-                { id: 'comparison', icon: '⚖️', label: 'Vaka-i Mütalaa', color: 'border-amber-700 text-amber-700' }
+                { id: 'comparison', icon: '⚖️', label: 'Vaka-i Mütalaa', color: 'border-amber-700 text-amber-700' },
+                { id: 'feedback', icon: '📜', label: 'Arz-ı Hal', color: 'border-emerald-600 text-emerald-600' }
               ].map(item => (
                 <button 
                   key={item.id}
