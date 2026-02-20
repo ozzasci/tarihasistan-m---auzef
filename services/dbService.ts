@@ -8,10 +8,15 @@ const STORE_RESOURCES = 'shared_resources';
 const STORE_MESSAGES = 'messages';
 const STORE_STATS = 'stats';
 const STORE_VIDEO_URLS = 'video_urls';
+const STORE_GLOSSARY = 'glossary';
+const STORE_FLASHCARDS = 'flashcards';
+const STORE_PREDICTIONS = 'predictions';
+const STORE_GENEALOGY = 'genealogy';
+const STORE_COLLECTION = 'collection_cards';
 
 export const initDB = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 7);
+    const request = indexedDB.open(DB_NAME, 12);
     request.onupgradeneeded = () => {
       const db = request.result;
       if (!db.objectStoreNames.contains(STORE_PDFS)) db.createObjectStore(STORE_PDFS);
@@ -22,6 +27,11 @@ export const initDB = (): Promise<IDBDatabase> => {
       if (!db.objectStoreNames.contains(STORE_MESSAGES)) db.createObjectStore(STORE_MESSAGES, { keyPath: 'id' });
       if (!db.objectStoreNames.contains(STORE_STATS)) db.createObjectStore(STORE_STATS);
       if (!db.objectStoreNames.contains(STORE_VIDEO_URLS)) db.createObjectStore(STORE_VIDEO_URLS);
+      if (!db.objectStoreNames.contains(STORE_GLOSSARY)) db.createObjectStore(STORE_GLOSSARY);
+      if (!db.objectStoreNames.contains(STORE_FLASHCARDS)) db.createObjectStore(STORE_FLASHCARDS);
+      if (!db.objectStoreNames.contains(STORE_PREDICTIONS)) db.createObjectStore(STORE_PREDICTIONS);
+      if (!db.objectStoreNames.contains(STORE_GENEALOGY)) db.createObjectStore(STORE_GENEALOGY);
+      if (!db.objectStoreNames.contains(STORE_COLLECTION)) db.createObjectStore(STORE_COLLECTION);
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
@@ -226,4 +236,69 @@ export const getProgress = async (courseId: string): Promise<number> => {
   const db = await initDB();
   const req = db.transaction(STORE_PROGRESS, 'readonly').objectStore(STORE_PROGRESS).get(courseId);
   return new Promise((res) => { req.onsuccess = () => res(req.result || 0); });
+};
+
+export const saveGlossary = async (courseId: string, unitNumber: number, terms: any[]) => {
+  const db = await initDB();
+  const key = `${courseId}_unit_${unitNumber}`;
+  return db.transaction(STORE_GLOSSARY, 'readwrite').objectStore(STORE_GLOSSARY).put(terms, key);
+};
+
+export const getGlossary = async (courseId: string, unitNumber: number): Promise<any[] | null> => {
+  const db = await initDB();
+  const key = `${courseId}_unit_${unitNumber}`;
+  const req = db.transaction(STORE_GLOSSARY, 'readonly').objectStore(STORE_GLOSSARY).get(key);
+  return new Promise((res) => { req.onsuccess = () => res(req.result || null); });
+};
+
+export const saveFlashcards = async (courseId: string, unitNumber: number, cards: any[]) => {
+  const db = await initDB();
+  const key = `${courseId}_unit_${unitNumber}`;
+  return db.transaction(STORE_FLASHCARDS, 'readwrite').objectStore(STORE_FLASHCARDS).put(cards, key);
+};
+
+export const getFlashcards = async (courseId: string, unitNumber: number): Promise<any[] | null> => {
+  const db = await initDB();
+  const key = `${courseId}_unit_${unitNumber}`;
+  const req = db.transaction(STORE_FLASHCARDS, 'readonly').objectStore(STORE_FLASHCARDS).get(key);
+  return new Promise((res) => { req.onsuccess = () => res(req.result || null); });
+};
+
+export const savePredictions = async (courseId: string, unitNumber: number, predictions: any[]) => {
+  const db = await initDB();
+  const key = `${courseId}_unit_${unitNumber}`;
+  return db.transaction(STORE_PREDICTIONS, 'readwrite').objectStore(STORE_PREDICTIONS).put(predictions, key);
+};
+
+export const getPredictions = async (courseId: string, unitNumber: number): Promise<any[] | null> => {
+  const db = await initDB();
+  const key = `${courseId}_unit_${unitNumber}`;
+  const req = db.transaction(STORE_PREDICTIONS, 'readonly').objectStore(STORE_PREDICTIONS).get(key);
+  return new Promise((res) => { req.onsuccess = () => res(req.result || null); });
+};
+
+export const saveGenealogy = async (courseId: string, unitNumber: number, rulers: any[]) => {
+  const db = await initDB();
+  const key = `${courseId}_unit_${unitNumber}`;
+  return db.transaction(STORE_GENEALOGY, 'readwrite').objectStore(STORE_GENEALOGY).put(rulers, key);
+};
+
+export const getGenealogy = async (courseId: string, unitNumber: number): Promise<any[] | null> => {
+  const db = await initDB();
+  const key = `${courseId}_unit_${unitNumber}`;
+  const req = db.transaction(STORE_GENEALOGY, 'readonly').objectStore(STORE_GENEALOGY).get(key);
+  return new Promise((res) => { req.onsuccess = () => res(req.result || null); });
+};
+
+export const saveCollectionCards = async (courseId: string, unitNumber: number, cards: any[]) => {
+  const db = await initDB();
+  const key = `${courseId}_unit_${unitNumber}`;
+  return db.transaction(STORE_COLLECTION, 'readwrite').objectStore(STORE_COLLECTION).put(cards, key);
+};
+
+export const getCollectionCards = async (courseId: string, unitNumber: number): Promise<any[] | null> => {
+  const db = await initDB();
+  const key = `${courseId}_unit_${unitNumber}`;
+  const req = db.transaction(STORE_COLLECTION, 'readonly').objectStore(STORE_COLLECTION).get(key);
+  return new Promise((res) => { req.onsuccess = () => res(req.result || null); });
 };

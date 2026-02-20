@@ -10,6 +10,8 @@ import PDFView from './components/PDFView';
 import LibraryView from './components/LibraryView';
 import CharacterInterview from './components/CharacterInterview';
 import GlossaryView from './components/GlossaryView';
+import ExamPredictionView from './components/ExamPredictionView';
+import GamesHub from './components/GamesHub';
 import FlashcardsView from './components/FlashcardsView';
 import StudyTimer from './components/StudyTimer';
 import GenealogyView from './components/GenealogyView';
@@ -32,7 +34,7 @@ import FeedbackView from './components/FeedbackView';
 import { getCurrentUser, checkUnitExists } from './services/dbService';
 
 type ViewState = 'home' | 'course' | 'library' | 'achievements' | 'comparison' | 'profile' | 'settings' | 'community' | 'planner' | 'useful_links' | 'exam_practice' | 'feedback';
-type TabState = 'pdf' | 'study' | 'visual' | 'sadâ' | 'video' | 'geography' | 'genealogy' | 'flashcards' | 'interview' | 'quiz' | 'chat' | 'glossary';
+type TabState = 'pdf' | 'study' | 'visual' | 'sadâ' | 'video' | 'geography' | 'genealogy' | 'flashcards' | 'interview' | 'quiz' | 'chat' | 'glossary' | 'prediction' | 'games';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -110,7 +112,9 @@ const App: React.FC = () => {
     { id: 'flashcards', label: 'Ezber Kartları', icon: '🗂️', desc: 'Aktif hatırlatma egzersizleri.' },
     { id: 'interview', label: 'Zaman Yolcusu', icon: '👤', desc: 'Tarihi şahsiyetlerle mülakat.' },
     { id: 'chat', label: 'AI Müşavir', icon: '🤖', desc: 'Akademik soru-cevap asistanı.' },
-    { id: 'glossary', label: 'Lügatçe', icon: '📖', desc: 'Tarihsel terminoloji sözlüğü.' }
+    { id: 'glossary', label: 'Lügatçe', icon: '📖', desc: 'Tarihsel terminoloji sözlüğü.' },
+    { id: 'prediction', label: 'Keşf-i Sual', icon: '🔮', desc: 'Sınav Tahmin Modülü' },
+    { id: 'games', label: 'Darü\'l-Eğlence', icon: '🎮', desc: 'Tarihsel Oyunlar ve Düellolar' }
   ];
 
   const renderContent = () => {
@@ -239,12 +243,14 @@ const App: React.FC = () => {
         case 'study': return <StudyView course={selectedCourse} selectedUnit={selectedUnit} onUnitChange={setSelectedUnit} />;
         case 'video': return <VideoView course={selectedCourse} />;
         case 'geography': return <GeographyView course={selectedCourse} />;
-        case 'genealogy': return <GenealogyView course={selectedCourse} />;
-        case 'flashcards': return <FlashcardsView course={selectedCourse} />;
+        case 'genealogy': return <GenealogyView course={selectedCourse} selectedUnit={selectedUnit} />;
+        case 'flashcards': return <FlashcardsView course={selectedCourse} selectedUnit={selectedUnit} />;
         case 'quiz': return <QuizView course={selectedCourse} />;
         case 'chat': return <AIChat course={selectedCourse} />;
         case 'interview': return <CharacterInterview course={selectedCourse} />;
-        case 'glossary': return <GlossaryView />;
+        case 'glossary': return <GlossaryView course={selectedCourse} selectedUnit={selectedUnit} />;
+        case 'prediction': return <ExamPredictionView course={selectedCourse} selectedUnit={selectedUnit} />;
+        case 'games': return <GamesHub course={selectedCourse} selectedUnit={selectedUnit} />;
         default: return null;
       }
     };

@@ -84,6 +84,8 @@ export interface Term {
   meaning: string;
 }
 
+export type GlossaryTerm = Term;
+
 export interface Flashcard {
   front: string;
   back: string;
@@ -100,6 +102,14 @@ export interface QuizQuestion {
   options: string[];
   correctAnswer: number;
   explanation: string;
+}
+
+export interface ExamPrediction {
+  topic: string;
+  importance: 'high' | 'medium' | 'low';
+  reason: string;
+  likelyQuestionType: string;
+  keyFacts: string[];
 }
 
 export interface StudySummary {
@@ -124,6 +134,48 @@ export interface RulerNode {
   name: string;
   period: string;
   keyAction: string;
+}
+
+export interface DuelChallenge {
+  opponent: string;
+  opponentTitle: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  questions: QuizQuestion[];
+}
+
+export interface TreasureHint {
+  id: string;
+  hint: string;
+  answer: string;
+  isFound: boolean;
+}
+
+export interface WhatIfScenario {
+  id: string;
+  title: string;
+  description: string;
+  alternativeHistory: string;
+  consequences: string[];
+}
+
+export interface HistoryWheelItem {
+  id: string;
+  label: string;
+  category: 'event' | 'person' | 'date' | 'place';
+  content: string;
+}
+
+export interface CollectionCard {
+  id: string;
+  name: string;
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  description: string;
+  imageUrl: string;
+  stats: {
+    power: number;
+    wisdom: number;
+    influence: number;
+  };
 }
 
 export interface SharedResource {

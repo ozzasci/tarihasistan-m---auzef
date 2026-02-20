@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type, Modality } from "@google/genai";
-import { StudySummary, QuizQuestion, Flashcard, RulerNode, ComparisonResult, WeeklyPlan, DayAvailability, NewsAnnouncement } from "../types";
+import { StudySummary, QuizQuestion, Flashcard, RulerNode, ComparisonResult, WeeklyPlan, DayAvailability, NewsAnnouncement, GlossaryTerm, ExamPrediction, DuelChallenge, TreasureHint, WhatIfScenario, HistoryWheelItem, CollectionCard } from "../types";
 
 const ACADEMIC_SYSTEM_INSTRUCTION = "Sen uzman bir AUZEF Tarih akademisyenisin. Öğrenci Oğuz'a 3. sınıf bahar dönemi derslerinde asistanlık yapıyorsun. Cevaplarını verirken sadece genel bilgi verme; ders notlarındaki akademik terminolojiyi kullan ve sınavda çıkabilecek kritik tarihlere vurgu yap. Daima öğrencinin elindeki AUZEF ders kitabına sadık kalarak, akademik ciddiyetle cevap ver.";
 
@@ -185,6 +185,37 @@ export const generateGenealogy = async (courseName: string): Promise<RulerNode[]
   } catch (err) { return handleAIError(err); }
 };
 
+export const extractGenealogyFromPDF = async (courseName: string, pdfBase64: string): Promise<RulerNode[]> => {
+  const ai = getAI();
+  if (!ai) throw new Error("AI başlatılamadı");
+  try {
+    const response = await ai.models.generateContent({
+      model: DEFAULT_MODEL,
+      contents: [
+        { inlineData: { mimeType: "application/pdf", data: pdfBase64 } },
+        { text: `"${courseName}" dersine ait bu AUZEF fasıl metninden hükümdarların, önemli devlet adamlarının veya hanedan üyelerinin şeceresini (soy ağacını) çıkar. Her kişi için isim, hüküm sürdüğü veya aktif olduğu dönem ve en önemli icraatını belirt.` }
+      ],
+      config: {
+        systemInstruction: ACADEMIC_SYSTEM_INSTRUCTION,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              name: { type: Type.STRING },
+              period: { type: Type.STRING },
+              keyAction: { type: Type.STRING }
+            },
+            required: ["name", "period", "keyAction"]
+          }
+        }
+      }
+    });
+    return safeJsonParse(response.text) || [];
+  } catch (err) { return handleAIError(err); }
+};
+
 export const researchLatestInsights = async (topic: string): Promise<{ text: string, links: { title: string, url: string }[] }> => {
   const ai = getAI();
   if (!ai) throw new Error("AI başlatılamadı");
@@ -273,5 +304,274 @@ export const interviewCharacter = async (characterName: string, characterTitle: 
   try {
     const response = await ai.models.generateContent({ model: PRO_MODEL, contents: history, config: { systemInstruction: `${ACADEMIC_SYSTEM_INSTRUCTION} Karakter: ${characterName} (${characterTitle})` } });
     return response.text;
+  } catch (err) { return handleAIError(err); }
+};
+
+export const extractGlossary = async (courseName: string, pdfBase64: string): Promise<GlossaryTerm[]> => {
+  const ai = getAI();
+  if (!ai) throw new Error("AI başlatılamadı");
+  try {
+    const response = await ai.models.generateContent({
+      model: DEFAULT_MODEL,
+      contents: [
+        { inlineData: { mimeType: "application/pdf", data: pdfBase64 } },
+        { text: `"${courseName}" dersine ait bu AUZEF fasıl metninden en önemli akademik ve tarihsel terimleri çıkar. Her terim için kısa ve öz bir açıklama yaz.` }
+      ],
+      config: {
+        systemInstruction: ACADEMIC_SYSTEM_INSTRUCTION,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              word: { type: Type.STRING },
+              meaning: { type: Type.STRING }
+            },
+            required: ["word", "meaning"]
+          }
+        }
+      }
+    });
+    return safeJsonParse(response.text) || [];
+  } catch (err) { return handleAIError(err); }
+};
+
+export const extractFlashcardsFromPDF = async (courseName: string, pdfBase64: string): Promise<Flashcard[]> => {
+  const ai = getAI();
+  if (!ai) throw new Error("AI başlatılamadı");
+  try {
+    const response = await ai.models.generateContent({
+      model: DEFAULT_MODEL,
+      contents: [
+        { inlineData: { mimeType: "application/pdf", data: pdfBase64 } },
+        { text: `"${courseName}" dersine ait bu AUZEF fasıl metninden en az 20 adet akademik ezber kartı (flashcard) üret. Kartların ön yüzünde bir soru veya terim, arka yüzünde ise kısa ve öz bir cevap/açıklama olmalı. Sınavda çıkabilecek kritik bilgilere odaklan.` }
+      ],
+      config: {
+        systemInstruction: ACADEMIC_SYSTEM_INSTRUCTION,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              front: { type: Type.STRING },
+              back: { type: Type.STRING }
+            },
+            required: ["front", "back"]
+          }
+        }
+      }
+    });
+    return safeJsonParse(response.text) || [];
+  } catch (err) { return handleAIError(err); }
+};
+
+export const generateExamPredictions = async (courseName: string, pdfBase64: string): Promise<ExamPrediction[]> => {
+  const ai = getAI();
+  if (!ai) throw new Error("AI başlatılamadı");
+  try {
+    const response = await ai.models.generateContent({
+      model: PRO_MODEL,
+      contents: [
+        { inlineData: { mimeType: "application/pdf", data: pdfBase64 } },
+        { text: `"${courseName}" dersine ait bu AUZEF fasıl metnini analiz et. AUZEF sınav standartlarını (çoktan seçmeli, öncüllü, bilgi odaklı) göz önüne alarak, sınavda çıkması en muhtemel 5-7 konuyu tahmin et. Her tahmin için önem derecesini, neden çıkabileceğini ve kritik bilgileri belirt.` }
+      ],
+      config: {
+        systemInstruction: ACADEMIC_SYSTEM_INSTRUCTION,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              topic: { type: Type.STRING },
+              importance: { type: Type.STRING, enum: ["high", "medium", "low"] },
+              reason: { type: Type.STRING },
+              likelyQuestionType: { type: Type.STRING },
+              keyFacts: { type: Type.ARRAY, items: { type: Type.STRING } }
+            },
+            required: ["topic", "importance", "reason", "likelyQuestionType", "keyFacts"]
+          }
+        }
+      }
+    });
+    return safeJsonParse(response.text) || [];
+  } catch (err) { return handleAIError(err); }
+};
+
+export const generateDuelChallenge = async (courseName: string, pdfBase64: string, opponent: string): Promise<DuelChallenge> => {
+  const ai = getAI();
+  if (!ai) throw new Error("AI başlatılamadı");
+  try {
+    const response = await ai.models.generateContent({
+      model: DEFAULT_MODEL,
+      contents: [
+        { inlineData: { mimeType: "application/pdf", data: pdfBase64 } },
+        { text: `"${courseName}" dersi kapsamında ${opponent} ile bir tarihsel düello hazırla. 5 adet zorlayıcı soru üret.` }
+      ],
+      config: {
+        systemInstruction: ACADEMIC_SYSTEM_INSTRUCTION,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            opponent: { type: Type.STRING },
+            opponentTitle: { type: Type.STRING },
+            difficulty: { type: Type.STRING, enum: ["easy", "medium", "hard"] },
+            questions: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  question: { type: Type.STRING },
+                  options: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  correctAnswer: { type: Type.INTEGER },
+                  explanation: { type: Type.STRING }
+                },
+                required: ["question", "options", "correctAnswer", "explanation"]
+              }
+            }
+          },
+          required: ["opponent", "opponentTitle", "difficulty", "questions"]
+        }
+      }
+    });
+    return safeJsonParse(response.text);
+  } catch (err) { return handleAIError(err); }
+};
+
+export const generateTreasureHunt = async (courseName: string, pdfBase64: string): Promise<TreasureHint[]> => {
+  const ai = getAI();
+  if (!ai) throw new Error("AI başlatılamadı");
+  try {
+    const response = await ai.models.generateContent({
+      model: DEFAULT_MODEL,
+      contents: [
+        { inlineData: { mimeType: "application/pdf", data: pdfBase64 } },
+        { text: `"${courseName}" dersi için 5 adet hazine avı ipucu üret. Her ipucu fasıl metninde gizli bir bilgiye (tarih, isim, yer) işaret etmeli.` }
+      ],
+      config: {
+        systemInstruction: ACADEMIC_SYSTEM_INSTRUCTION,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              id: { type: Type.STRING },
+              hint: { type: Type.STRING },
+              answer: { type: Type.STRING }
+            },
+            required: ["id", "hint", "answer"]
+          }
+        }
+      }
+    });
+    return (safeJsonParse(response.text) || []).map((h: any) => ({ ...h, isFound: false }));
+  } catch (err) { return handleAIError(err); }
+};
+
+export const generateWhatIfScenario = async (courseName: string, pdfBase64: string): Promise<WhatIfScenario> => {
+  const ai = getAI();
+  if (!ai) throw new Error("AI başlatılamadı");
+  try {
+    const response = await ai.models.generateContent({
+      model: PRO_MODEL,
+      contents: [
+        { inlineData: { mimeType: "application/pdf", data: pdfBase64 } },
+        { text: `"${courseName}" dersindeki bir olay üzerinden "Ya Şöyle Olsaydı?" (What If) senaryosu üret.` }
+      ],
+      config: {
+        systemInstruction: ACADEMIC_SYSTEM_INSTRUCTION,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            id: { type: Type.STRING },
+            title: { type: Type.STRING },
+            description: { type: Type.STRING },
+            alternativeHistory: { type: Type.STRING },
+            consequences: { type: Type.ARRAY, items: { type: Type.STRING } }
+          },
+          required: ["id", "title", "description", "alternativeHistory", "consequences"]
+        }
+      }
+    });
+    return safeJsonParse(response.text);
+  } catch (err) { return handleAIError(err); }
+};
+
+export const generateHistoryWheel = async (courseName: string, pdfBase64: string): Promise<HistoryWheelItem[]> => {
+  const ai = getAI();
+  if (!ai) throw new Error("AI başlatılamadı");
+  try {
+    const response = await ai.models.generateContent({
+      model: DEFAULT_MODEL,
+      contents: [
+        { inlineData: { mimeType: "application/pdf", data: pdfBase64 } },
+        { text: `"${courseName}" dersi için 8 adet Tarih Çarkı (Felek-i Tarih) öğesi üret. Her öğe bir olay, kişi, tarih veya yer olmalı ve kısa bir açıklama içermeli.` }
+      ],
+      config: {
+        systemInstruction: ACADEMIC_SYSTEM_INSTRUCTION,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              id: { type: Type.STRING },
+              label: { type: Type.STRING },
+              category: { type: Type.STRING, enum: ["event", "person", "date", "place"] },
+              content: { type: Type.STRING }
+            },
+            required: ["id", "label", "category", "content"]
+          }
+        }
+      }
+    });
+    return safeJsonParse(response.text) || [];
+  } catch (err) { return handleAIError(err); }
+};
+
+export const generateCollectionCards = async (courseName: string, pdfBase64: string): Promise<CollectionCard[]> => {
+  const ai = getAI();
+  if (!ai) throw new Error("AI başlatılamadı");
+  try {
+    const response = await ai.models.generateContent({
+      model: PRO_MODEL,
+      contents: [
+        { inlineData: { mimeType: "application/pdf", data: pdfBase64 } },
+        { text: `"${courseName}" dersindeki önemli şahsiyetler, yapılar veya olaylar üzerinden 5 adet Koleksiyon Kartı (Hazine-i Enderun) üret. Her kartın nadirlik derecesi (common, rare, epic, legendary) ve istatistikleri (power, wisdom, influence) olmalı.` }
+      ],
+      config: {
+        systemInstruction: ACADEMIC_SYSTEM_INSTRUCTION,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              id: { type: Type.STRING },
+              name: { type: Type.STRING },
+              rarity: { type: Type.STRING, enum: ["common", "rare", "epic", "legendary"] },
+              description: { type: Type.STRING },
+              imageUrl: { type: Type.STRING },
+              stats: {
+                type: Type.OBJECT,
+                properties: {
+                  power: { type: Type.INTEGER },
+                  wisdom: { type: Type.INTEGER },
+                  influence: { type: Type.INTEGER }
+                },
+                required: ["power", "wisdom", "influence"]
+              }
+            },
+            required: ["id", "name", "rarity", "description", "imageUrl", "stats"]
+          }
+        }
+      }
+    });
+    return safeJsonParse(response.text) || [];
   } catch (err) { return handleAIError(err); }
 };
