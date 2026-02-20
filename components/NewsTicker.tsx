@@ -5,21 +5,19 @@ import { NewsAnnouncement } from '../types';
 
 const NewsTicker: React.FC = () => {
   const [news, setNews] = useState<NewsAnnouncement[]>([
-    { text: "⌛ HAVADİS-İ CEDİD YÜKLENİYOR...", url: "#" },
-    { text: "📢 AUZEF RESMİ DUYURULAR SAYFASI", url: "https://auzef.istanbul.edu.tr/tr/duyurular" }
+    { text: "📖 KİTAP: FASIL PDF'LERİNİ OKU VE ANALİZ ET", url: "https://auzef.istanbul.edu.tr" },
+    { text: "📜 HÜLASA: ÜNİTE ÖZETLERİNİ VE KRİTİK NOTLARI ÇIKAR", url: "https://auzef.istanbul.edu.tr" },
+    { text: "🎙️ SADÂ: DERS NOTLARINI SESLİ DİNLE", url: "https://auzef.istanbul.edu.tr" },
+    { text: "📸 GÖRSEL: HARİTA VE MİNYATÜRLERİ İNCELE", url: "https://auzef.istanbul.edu.tr" },
+    { text: "📝 İMTİHAN: ÜNİTE SONU TESTLERİYLE KENDİNİ DENE", url: "https://auzef.istanbul.edu.tr" },
+    { text: "🔮 KEŞF-İ SUAL: SINAV TAHMİNLERİNİ GÖR", url: "https://auzef.istanbul.edu.tr" },
+    { text: "🎮 DARÜ'L-EĞLENCE: TARİHSEL OYUNLARLA ÖĞREN", url: "https://auzef.istanbul.edu.tr" },
+    { text: "📖 LÜGATÇE: AKADEMİK TERİMLERİ ÖĞREN", url: "https://auzef.istanbul.edu.tr" },
+    { text: "👤 ZAMAN YOLCUSU: TARİHİ ŞAHSİYETLERLE MÜLAKAT YAP", url: "https://auzef.istanbul.edu.tr" }
   ]);
 
   useEffect(() => {
-    const updateNews = async () => {
-      const latestNews = await fetchAuzefNews();
-      if (latestNews && latestNews.length > 0) {
-        setNews(latestNews);
-      }
-    };
-    updateNews();
-    // Her 1 saatte bir veriyi tazele
-    const interval = setInterval(updateNews, 3600000);
-    return () => clearInterval(interval);
+    // Statik içerik kullanıyoruz, ancak gelecekte dinamik duyurular için bu yapı korunabilir.
   }, []);
 
   return (

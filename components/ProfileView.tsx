@@ -130,19 +130,19 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdate, onLogout, onB
             <div className="space-y-4 relative z-10">
               <div className="flex items-center justify-between p-4 bg-white/60 dark:bg-slate-900/40 rounded-2xl border border-amber-200/50 dark:border-amber-900/50">
                 <span className="text-sm font-bold text-amber-900 dark:text-amber-300">Bahar Dönemi Ara Sınav (Vize)</span>
-                <span className="text-xs font-black text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 px-3 py-1 rounded-full whitespace-nowrap">26-27 Nisan 2025</span>
+                <span className="text-xs font-black text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 px-3 py-1 rounded-full whitespace-nowrap">02-03 Mayıs 2026</span>
               </div>
               <div className="flex items-center justify-between p-4 bg-white/60 dark:bg-slate-900/40 rounded-2xl border border-amber-200/50 dark:border-amber-900/50">
                 <span className="text-sm font-bold text-amber-900 dark:text-amber-300">Bahar Dönemi Final (Bitirme)</span>
-                <span className="text-xs font-black text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 px-3 py-1 rounded-full whitespace-nowrap">14-15 Haziran 2025</span>
+                <span className="text-xs font-black text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 px-3 py-1 rounded-full whitespace-nowrap">20-21 Haziran 2026</span>
               </div>
               <div className="flex items-center justify-between p-4 bg-white/60 dark:bg-slate-900/40 rounded-2xl border border-amber-200/50 dark:border-amber-900/50">
                 <span className="text-sm font-bold text-amber-900 dark:text-amber-300">Bahar Dönemi Bütünleme Sınavı</span>
-                <span className="text-xs font-black text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 px-3 py-1 rounded-full whitespace-nowrap">26-27 Temmuz 2025</span>
+                <span className="text-xs font-black text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 px-3 py-1 rounded-full whitespace-nowrap">18-19 Temmuz 2026</span>
               </div>
               <div className="flex items-center justify-between p-4 bg-white/60 dark:bg-slate-900/40 rounded-2xl border border-amber-200/50 dark:border-amber-900/50">
                 <span className="text-sm font-bold text-amber-900 dark:text-amber-300">Mezuniyet Üç Ders Sınavı</span>
-                <span className="text-xs font-black text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 px-3 py-1 rounded-full whitespace-nowrap">24 Ağustos 2025</span>
+                <span className="text-xs font-black text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 px-3 py-1 rounded-full whitespace-nowrap">23 Ağustos 2026</span>
               </div>
             </div>
             <div className="absolute right-[-20px] bottom-[-20px] opacity-10 text-[140px] rotate-12">🗓️</div>

@@ -90,31 +90,50 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack, theme, onToggleThem
             </div>
           </div>
 
-          {/* Public Access Info */}
+          {/* AUZEF Official Links Section */}
           <div className="bg-hunkar text-altin p-8 rounded-[2.5rem] shadow-xl border-2 border-altin relative overflow-hidden">
              <div className="relative z-10">
-               <h3 className="text-lg font-display font-black mb-4 uppercase tracking-widest">Diğer Öğrenciler İçin</h3>
-               <p className="text-xs font-serif italic leading-relaxed opacity-90 mb-6">
-                 Bu uygulamayı diğer AUZEF öğrencileriyle paylaşırken "Google Drive" özelliğini kullanabilmeleri için geliştirici (Oğuz) tarafından onaylanmaları veya uygulamanın "Public" moda alınması gerekir.
-               </p>
-               <button 
-                 onClick={() => setShowDevNotes(!showDevNotes)}
-                 className="text-[10px] font-black underline uppercase tracking-widest"
-               >
-                 {showDevNotes ? "KAPAT" : "YAYINLAMA REHBERİNİ GÖR"}
-               </button>
-               
-               {showDevNotes && (
-                 <div className="mt-4 pt-4 border-t border-altin/20 space-y-4 animate-in slide-in-from-top-2">
-                    <p className="text-[10px] leading-relaxed">
-                      1. Google Cloud Console {'>'} OAuth Consent Screen {'>'} <b>"Publish App"</b> deyin.<br/>
-                      2. Bu sayede manuel mail eklemenize gerek kalmaz.<br/>
-                      3. Google onay verene kadar kullanıcılar "Gelişmiş {'>'} Yine de devam et" diyerek giriş yapabilir.
-                    </p>
-                 </div>
-               )}
+               <h3 className="text-lg font-display font-black mb-4 uppercase tracking-widest">AUZEF Resmî Kanallar</h3>
+               <div className="space-y-3">
+                 <a 
+                   href="https://auzef.istanbul.edu.tr" 
+                   target="_blank" 
+                   rel="noopener noreferrer"
+                   className="flex items-center justify-between p-3 bg-white/10 rounded-xl hover:bg-white/20 transition-all border border-altin/20"
+                 >
+                   <span className="text-[10px] font-bold uppercase tracking-widest">Resmî Web Sitesi</span>
+                   <span>🌐</span>
+                 </a>
+                 <a 
+                   href="https://aksis.istanbul.edu.tr" 
+                   target="_blank" 
+                   rel="noopener noreferrer"
+                   className="flex items-center justify-between p-3 bg-white/10 rounded-xl hover:bg-white/20 transition-all border border-altin/20"
+                 >
+                   <span className="text-[10px] font-bold uppercase tracking-widest">AKSİS Öğrenci Girişi</span>
+                   <span>🔑</span>
+                 </a>
+                 <a 
+                   href="https://auzefcozum.istanbul.edu.tr" 
+                   target="_blank" 
+                   rel="noopener noreferrer"
+                   className="flex items-center justify-between p-3 bg-white/10 rounded-xl hover:bg-white/20 transition-all border border-altin/20"
+                 >
+                   <span className="text-[10px] font-bold uppercase tracking-widest">Çözüm Merkezi</span>
+                   <span>🆘</span>
+                 </a>
+                 <a 
+                   href="https://auzef.istanbul.edu.tr/tr/duyurular" 
+                   target="_blank" 
+                   rel="noopener noreferrer"
+                   className="flex items-center justify-between p-3 bg-white/10 rounded-xl hover:bg-white/20 transition-all border border-altin/20"
+                 >
+                   <span className="text-[10px] font-bold uppercase tracking-widest">Güncel Duyurular</span>
+                   <span>📢</span>
+                 </a>
+               </div>
              </div>
-             <div className="absolute -right-4 -bottom-4 text-7xl opacity-10">📢</div>
+             <div className="absolute -right-4 -bottom-4 text-7xl opacity-10">🏛️</div>
           </div>
         </div>
 
